@@ -1,0 +1,172 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// --------------------
+// ENUMS
+// --------------------
+enum CompanyType {
+  material
+  truck
+}
+
+enum PaymentStatus {
+  pending
+  advance
+  completed
+}
+
+enum ExtraChargeType {
+  discount
+  late_delivery
+  detention
+  extra_loading
+  penalty
+  other
+}
+
+enum BiltiStatus {
+  pending
+  received
+  submitted
+}
+
+// --------------------
+// MAIN TRIP MODEL
+// --------------------
+model Trip {
+  id      String   @id @default(uuid())
+  tripNo  Int      @unique
+  date    DateTime
+  truckNo String
+  from    String
+  to      String
+  weight  Float
+  remarks String?
+
+  // Relations
+  bilti           Bilti?
+  materialPayment PartyPaymentDetails? @relation("MaterialPayment")
+  truckPayment    PartyPaymentDetails? @relation("TruckPayment")
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+
+  @@index([date])
+  @@index([truckNo])
+}
+
+// --------------------
+// BILTI MODEL
+// --------------------
+model Bilti {
+  id            String      @id @default(uuid())
+  no            String      @unique
+  status        BiltiStatus @default(pending)
+  receivedDate  DateTime?
+  submittedDate DateTime?
+
+  // Relation
+  tripId String @unique
+  trip   Trip   @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+}
+
+// --------------------
+// PARTY PAYMENT DETAILS MODEL
+// --------------------
+model PartyPaymentDetails {
+  id                 String           @id @default(uuid())
+  partyId            String
+  party              Company          @relation(fields: [partyId], references: [id])
+  freightAmount      Float            @default(0)
+  advanceAmount      Float            @default(0)
+  advanceDate        DateTime?
+  loadingCharge      Float            @default(0)
+  unloadingCharge    Float            @default(0)
+  damageCharge       Float            @default(0)
+  tdsAmount          Float            @default(0)
+  commissionAmount   Float            @default(0)
+  extraChargesAmount Float            @default(0)
+  extraChargesType   ExtraChargeType?
+  paymentStatus      PaymentStatus    @default(pending)
+  finalPaymentDate   DateTime?
+
+  // Relations
+  refund RefundDetails?
+
+  // Relations to Trip (one of these will be set)
+  materialTrip   Trip?   @relation("MaterialPayment", fields: [materialTripId], references: [id], onDelete: Cascade)
+  materialTripId String? @unique
+
+  truckTrip   Trip?   @relation("TruckPayment", fields: [truckTripId], references: [id], onDelete: Cascade)
+  truckTripId String? @unique
+
+  @@index([partyId])
+  @@index([paymentStatus])
+}
+
+// --------------------
+// REFUND DETAILS MODEL
+// --------------------
+model RefundDetails {
+  id           String   @id @default(uuid())
+  refundAmount Float
+  refundDate   DateTime
+
+  // Relation
+  paymentId String              @unique
+  payment   PartyPaymentDetails @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+}
+
+// --------------------
+// COMPANY MODEL
+// --------------------
+model Company {
+  id      String      @id @default(uuid())
+  name    String
+  type    CompanyType
+  address String?
+  phone   String?
+  email   String?
+  note    String?
+
+  // Relations
+  payments  PartyPaymentDetails[]
+  employees Employee[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([name])
+  @@index([type])
+}
+
+// --------------------
+// EMPLOYEE MODEL
+// --------------------
+model Employee {
+  id          String  @id @default(uuid())
+  firstName   String
+  lastName    String?
+  designation String?
+  email       String?
+  phone       String?
+  altPhone    String?
+
+  // Relation to Company
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([firstName])
+  @@index([email])
+  @@index([companyId])
+}
