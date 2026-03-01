@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DatePicker } from "@/components/ui/date-picker";
 import { FormField } from "@/components/ui/form-field";
@@ -5,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { BiltiInput } from "@/validators";
-import { FileText } from "lucide-react";
+import { FileText, X } from "lucide-react";
 
 interface BiltiSectionProps {
   enabled: boolean;
@@ -79,21 +80,45 @@ export function BiltiSection({
             </FormField>
 
             <FormField label="Received Date" htmlFor="bilti-received-date">
-              <DatePicker
-                id="bilti-received-date"
-                value={bilti.receivedDate}
-                onChange={(date) => handleChange("receivedDate", date || null)}
-                placeholder="Pick received date"
-              />
+              <div className="flex gap-2">
+                <DatePicker
+                  id="bilti-received-date"
+                  value={bilti.receivedDate}
+                  onChange={(date) =>
+                    handleChange("receivedDate", date || null)
+                  }
+                  placeholder="Pick received date"
+                />
+                {bilti.receivedDate && (
+                  <Button
+                    variant="outline"
+                    onClick={() => handleChange("receivedDate", null)}
+                  >
+                    <X />
+                  </Button>
+                )}
+              </div>
             </FormField>
 
             <FormField label="Submitted Date" htmlFor="bilti-submitted-date">
-              <DatePicker
-                id="bilti-submitted-date"
-                value={bilti.submittedDate}
-                onChange={(date) => handleChange("submittedDate", date || null)}
-                placeholder="Pick submitted date"
-              />
+              <div className="flex gap-2">
+                <DatePicker
+                  id="bilti-submitted-date"
+                  value={bilti.submittedDate}
+                  onChange={(date) =>
+                    handleChange("submittedDate", date || null)
+                  }
+                  placeholder="Pick submitted date"
+                />
+                {bilti.submittedDate && (
+                  <Button
+                    variant="outline"
+                    onClick={() => handleChange("submittedDate", null)}
+                  >
+                    <X />
+                  </Button>
+                )}
+              </div>
             </FormField>
           </div>
         </CardContent>
