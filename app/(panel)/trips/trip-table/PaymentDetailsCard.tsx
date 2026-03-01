@@ -38,9 +38,8 @@ export function PaymentDetailsCard({ trip, type }: PaymentDetailsCardProps) {
     payment.damageCharge +
     payment.extraChargesAmount;
   const totalDeductions = payment.tdsAmount + payment.commissionAmount;
-  const netAmount = payment.freightAmount - (totalCharges + totalDeductions);
-  const balanceAmount =
-    netAmount - payment.advanceAmount - (payment.refund?.refundAmount || 0);
+  const netAmount = payment.freightAmount - payment.advanceAmount;
+  const balanceAmount = netAmount - totalCharges - totalDeductions;
 
   return (
     <DetailCard title={`${type} Payment Details`} icon={IndianRupee}>
@@ -62,15 +61,20 @@ export function PaymentDetailsCard({ trip, type }: PaymentDetailsCardProps) {
         />
       </div>
 
-      {/* Freight & Charges */}
+      {/* Freight */}
       <div className="pt-2 border-t">
         <p className="text-xs font-semibold text-muted-foreground mb-2">
-          FREIGHT & CHARGES
+          WEIGHT & RATE
         </p>
 
         <DetailRow label="Weight" value={`${trip.weight} Kg`} />
 
         <DetailRow label="Rate" value={formatCurrency(rate)} />
+      </div>
+      <div className="pt-2 border-t">
+        <p className="text-xs font-semibold text-muted-foreground mb-2">
+          PAYMENT DETAILS
+        </p>
 
         <DetailRow
           label="Freight Amount"
@@ -78,20 +82,58 @@ export function PaymentDetailsCard({ trip, type }: PaymentDetailsCardProps) {
           highlight
         />
 
+        {payment.advanceAmount > 0 && payment.advanceDate && (
+          <DetailRow
+            label="Advance Paid"
+            value={
+              <span className="flex items-center gap-3">
+                <span>{formatDate(payment.advanceDate, "dd MMM yyyy")}</span>
+                <span>{formatCurrency(payment.advanceAmount)}</span>
+              </span>
+            }
+          />
+        )}
+
+        <DetailRow
+          label="Net Payable"
+          value={formatCurrency(netAmount)}
+          highlight
+        />
+      </div>
+
+      {/* Charges & Deductions */}
+      <div className="pt-2 border-t">
+        <p className="text-xs font-semibold text-muted-foreground mb-2">
+          CHARGES & DEDUCTIONS
+        </p>
+
         <DetailRow
           label="Loading Charge"
           value={formatCurrency(payment.loadingCharge)}
         />
+
         <DetailRow
           label="Unloading Charge"
           value={formatCurrency(payment.unloadingCharge)}
         />
+
         {payment.damageCharge > 0 && (
           <DetailRow
             label="Damage Charge"
             value={formatCurrency(payment.damageCharge)}
           />
         )}
+
+        <DetailRow
+          label="TDS Amount"
+          value={formatCurrency(payment.tdsAmount)}
+        />
+
+        <DetailRow
+          label="Commission"
+          value={formatCurrency(payment.commissionAmount)}
+        />
+
         {payment.extraChargesAmount > 0 && (
           <>
             <DetailRow
@@ -108,68 +150,37 @@ export function PaymentDetailsCard({ trip, type }: PaymentDetailsCardProps) {
         )}
       </div>
 
-      {/* Deductions */}
-      <div className="pt-2 border-t">
-        <p className="text-xs font-semibold text-muted-foreground mb-2">
-          DEDUCTIONS
-        </p>
-        <DetailRow
-          label="TDS Amount"
-          value={formatCurrency(payment.tdsAmount)}
-        />
-        <DetailRow
-          label="Commission"
-          value={formatCurrency(payment.commissionAmount)}
-        />
-      </div>
-
-      {/* Payment Details */}
-      <div className="pt-2 border-t">
-        <p className="text-xs font-semibold text-muted-foreground mb-2">
-          PAYMENT DETAILS
-        </p>
-        <DetailRow
-          label="Net Payable"
-          value={formatCurrency(netAmount)}
-          highlight
-        />
-        {payment.advanceAmount > 0 && payment.advanceDate && (
-          <>
-            <DetailRow
-              label="Advance Paid"
-              value={formatCurrency(payment.advanceAmount)}
-            />
-            <DetailRow
-              label="Advance Date"
-              value={formatDate(payment.advanceDate, "dd MMM yyyy")}
-            />
-          </>
-        )}
-        {payment.refund && (
-          <>
-            <DetailRow
-              label="Refund Amount"
-              value={formatCurrency(payment.refund.refundAmount)}
-            />
-            <DetailRow
-              label="Refund Date"
-              value={formatDate(payment.refund.refundDate, "dd MMM yyyy")}
-            />
-          </>
-        )}
-        {payment.finalPaymentDate && (
+      {/* Refund */}
+      {payment.refund && (
+        <div className="pt-2 border-t">
+          <p className="text-xs font-semibold text-muted-foreground mb-2">
+            REFUND
+          </p>
           <DetailRow
-            label="Final Payment Date"
-            value={formatDate(payment.finalPaymentDate, "dd MMM yyyy")}
+            label="Refund Amount"
+            value={formatCurrency(payment.refund.refundAmount)}
           />
-        )}
-        <div className="pt-2 mt-2 border-t">
           <DetailRow
-            label="Balance Due"
-            value={formatCurrency(balanceAmount)}
-            highlight
+            label="Refund Date"
+            value={formatDate(payment.refund.refundDate, "dd MMM yyyy")}
           />
         </div>
+      )}
+      <div className="pt-2 mt-2 border-t">
+        <DetailRow
+          label="Balance Due"
+          value={
+            <span className="flex items-center gap-3">
+              {payment.finalPaymentDate && (
+                <span>
+                  {formatDate(payment.finalPaymentDate, "dd MMM yyyy")}
+                </span>
+              )}
+              <span>{formatCurrency(balanceAmount)}</span>
+            </span>
+          }
+          highlight
+        />
       </div>
     </DetailCard>
   );

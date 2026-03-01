@@ -124,7 +124,7 @@ export const TripsTable = ({ trips, onViewDetails }: TripsTableProps) => {
                   </TableCell>
 
                   <TableCell className="font-medium">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 whitespace-nowrap">
                       <Calendar className="h-4 w-4 text-muted-foreground" />
                       {formatDate(trip.date, "dd-MM-yyyy")}
                     </div>
