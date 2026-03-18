@@ -1,166 +1,132 @@
 "use client";
 
 import { AppConfig } from "@/lib/config";
+import { fmtAmount } from "@/lib/str";
 import type { RefundsByDate } from "@/validators";
 import { Document, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 import { formatDate } from "date-fns";
+import { PDFHeader, PDFFooter, pdfLayoutStyles } from "./pdf-layout";
+import { registerFonts } from "./font";
+
+registerFonts();
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
   page: {
-    fontFamily: "Helvetica",
-    fontSize: 10,
-    padding: 40,
-    backgroundColor: "#FFFFFF",
-  },
-
-  // Header
-  headerContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 24,
-    paddingBottom: 16,
-    borderBottomWidth: 2,
-    borderBottomColor: "#1a1a1a",
-  },
-  headerLeft: {},
-  companyName: {
-    fontSize: 18,
-    fontWeight: 700,
-    color: "#1a1a1a",
-    marginBottom: 2,
-  },
-  headerSubtitle: {
+    fontFamily: "Roboto",
     fontSize: 9,
-    color: "#6b7280",
-  },
-  headerRight: {
-    alignItems: "flex-end",
-  },
-  reportTitle: {
-    fontSize: 13,
-    fontWeight: 600,
-    color: "#1a1a1a",
-    marginBottom: 4,
-  },
-  headerMeta: {
-    fontSize: 8,
-    color: "#6b7280",
-    marginBottom: 1,
+    paddingTop: 20,
+    paddingBottom: 40,
+    paddingHorizontal: 20,
+    backgroundColor: "#ffffff",
   },
 
-  // Summary row
-  summaryRow: {
-    flexDirection: "row",
-    gap: 16,
-    marginBottom: 20,
+  // ── Section (per transporter) ──────────────────────────────────────────────
+  section: {
+    marginBottom: 12,
   },
-  summaryCard: {
-    flex: 1,
-    padding: 12,
-    backgroundColor: "#f9fafb",
-    borderRadius: 6,
+  sectionTitle: {
+    fontSize: 12,
+    fontFamily: "Roboto",
+    fontWeight: "bold",
+    backgroundColor: "#f5f5f5",
+    color: "#1a1a1a",
+    padding: 8,
+    paddingHorizontal: 10,
+    marginBottom: 0,
+    textAlign: "center",
     borderWidth: 1,
-    borderColor: "#e5e7eb",
-  },
-  summaryLabel: {
-    fontSize: 8,
-    color: "#6b7280",
-    textTransform: "uppercase" as const,
-    letterSpacing: 0.5,
-    marginBottom: 4,
-  },
-  summaryValue: {
-    fontSize: 16,
-    fontWeight: 700,
-    color: "#1a1a1a",
+    borderBottomWidth: 0,
+    borderColor: "#d0d0d0",
   },
 
-  // Table
+  // ── Table ──────────────────────────────────────────────────────────────────
   table: {
+    marginTop: 0,
+    marginBottom: 12,
+    overflow: "hidden",
     borderWidth: 1,
-    borderColor: "#e5e7eb",
-    borderRadius: 4,
+    borderColor: "#d0d0d0",
   },
-  tableHeader: {
+  tableHeaderRow: {
     flexDirection: "row",
-    backgroundColor: "#f3f4f6",
+    backgroundColor: "#000000",
     borderBottomWidth: 1,
-    borderBottomColor: "#d1d5db",
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+    borderBottomColor: "#d0d0d0",
   },
   tableRow: {
     flexDirection: "row",
     borderBottomWidth: 1,
-    borderBottomColor: "#f3f4f6",
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+    borderBottomColor: "#d0d0d0",
+    backgroundColor: "#ffffff",
   },
   tableRowAlt: {
+    flexDirection: "row",
+    borderBottomWidth: 1,
+    borderBottomColor: "#d0d0d0",
     backgroundColor: "#fafafa",
   },
-  tableFooter: {
+  tableRowLast: {
     flexDirection: "row",
-    backgroundColor: "#f3f4f6",
-    borderTopWidth: 2,
-    borderTopColor: "#d1d5db",
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+    borderBottomWidth: 0,
+    backgroundColor: "#ffffff",
+  },
+
+  // ── Table Cells ────────────────────────────────────────────────────────────
+  cellHeader: {
+    fontFamily: "Roboto",
+    fontWeight: "semibold",
+    fontSize: 8,
+    padding: 5,
+    textAlign: "center",
+    color: "#ffffff",
+  },
+  cell: {
+    fontSize: 8,
+    padding: 5,
+    textAlign: "center",
+    color: "#404040",
   },
 
   // Column widths
-  colSno: { width: "10%" },
-  colDate: { width: "30%" },
+  colSr: { width: "8%" },
+  colDate: { width: "27%" },
   colTrips: { width: "20%", textAlign: "center" },
-  colAmount: { width: "40%", textAlign: "right" },
+  colAmount: { width: "25%", textAlign: "right" },
+  colAction: { width: "20%", textAlign: "center" },
 
-  // Cell text
-  thText: {
-    fontSize: 8,
-    fontWeight: 600,
-    color: "#374151",
-    textTransform: "uppercase" as const,
-    letterSpacing: 0.5,
-  },
-  tdText: {
-    fontSize: 10,
-    color: "#1f2937",
-  },
-  tdTextCenter: {
-    fontSize: 10,
-    color: "#1f2937",
-    textAlign: "center",
-  },
-  tdTextRight: {
-    fontSize: 10,
-    color: "#1f2937",
-    textAlign: "right",
-  },
-  footerText: {
-    fontSize: 10,
-    fontWeight: 700,
-    color: "#1a1a1a",
-  },
-
-  // Page footer
-  pageFooter: {
-    position: "absolute",
-    bottom: 24,
-    left: 40,
-    right: 40,
+  // ── Summary row ────────────────────────────────────────────────────────────
+  summaryRow: {
     flexDirection: "row",
+    marginTop: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    borderWidth: 1,
+    borderColor: "#d0d0d0",
+    backgroundColor: "#f9f9f9",
     justifyContent: "space-between",
     alignItems: "center",
-    borderTopWidth: 1,
-    borderTopColor: "#e5e7eb",
-    paddingTop: 8,
   },
-  pageFooterText: {
-    fontSize: 7,
-    color: "#9ca3af",
+  summarySection: {
+    flexDirection: "row",
+    justifyContent: "flex-start",
+    alignItems: "center",
+    gap: 20,
+  },
+  summarySectionLeft: {
+    flexDirection: "column",
+    justifyContent: "center",
+  },
+  summarySectionRight: {
+    flexDirection: "column",
+    justifyContent: "center",
+  },
+  summaryText: {
+    fontSize: 11,
+    fontFamily: "Roboto",
+    fontWeight: "semibold",
+    color: "#1a1a1a",
   },
 });
 
@@ -171,11 +137,63 @@ interface RefundLedgerPdfProps {
   refunds: RefundsByDate[];
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-function formatCurrency(amount: number): string {
-  return `Rs. ${amount.toLocaleString("en-IN")}`;
+interface RefundRowProps {
+  refund: RefundsByDate;
+  index: number;
+  isLast: boolean;
 }
+
+// ─── Sub-components ────────────────────────────────────────────────────────────
+
+const TableHeader = () => (
+  <View style={styles.tableHeaderRow} fixed>
+    <Text style={[styles.cellHeader, styles.colSr]}>#</Text>
+    <Text style={[styles.cellHeader, styles.colDate]}>DATE</Text>
+    <Text style={[styles.cellHeader, styles.colTrips]}>TRIPS</Text>
+    <Text style={[styles.cellHeader, styles.colAmount]}>AMOUNT</Text>
+  </View>
+);
+
+const RefundRow = ({ refund, index, isLast }: RefundRowProps) => {
+  const rowStyle = isLast
+    ? styles.tableRowLast
+    : index % 2 === 0
+      ? styles.tableRow
+      : styles.tableRowAlt;
+
+  return (
+    <View style={rowStyle} wrap={false}>
+      <Text style={[styles.cell, styles.colSr]}>{index + 1}</Text>
+      <Text style={[styles.cell, styles.colDate]}>
+        {formatDate(refund.refundDate, "dd MMM yyyy")}
+      </Text>
+      <Text style={[styles.cell, styles.colTrips]}>{refund.tripCount}</Text>
+      <Text style={[styles.cell, styles.colAmount]}>
+        {fmtAmount(refund.refundAmt)}
+      </Text>
+    </View>
+  );
+};
+
+interface SummaryProps {
+  totalRefunds: number;
+  totalTrips: number;
+  totalAmount: number;
+}
+
+const SummarySection = ({
+  totalRefunds,
+  totalTrips,
+  totalAmount,
+}: SummaryProps) => (
+  <View style={styles.summaryRow}>
+    <Text style={styles.summaryText}>Total Entries: {totalRefunds}</Text>
+    <Text style={styles.summaryText}>Total Trips: {totalTrips}</Text>
+    <Text style={styles.summaryText}>
+      Total Amount: {fmtAmount(totalAmount)}
+    </Text>
+  </View>
+);
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
@@ -185,125 +203,45 @@ export function RefundLedgerPdf({
 }: RefundLedgerPdfProps) {
   const totalAmount = refunds.reduce((sum, r) => sum + r.refundAmt, 0);
   const totalTrips = refunds.reduce((sum, r) => sum + r.tripCount, 0);
-  const generatedAt = formatDate(new Date(), "dd MMM yyyy, hh:mm a");
+  const reportDate = formatDate(new Date(), "dd MMM yyyy");
 
   return (
-    <Document>
+    <Document title="Refund Ledger Report" author={AppConfig.company.name}>
       <Page size="A4" style={styles.page}>
-        {/* Header */}
-        <View style={styles.headerContainer}>
-          <View style={styles.headerLeft}>
-            <Text style={styles.companyName}>{AppConfig.company.name}</Text>
-            <Text style={styles.headerSubtitle}>{AppConfig.description}</Text>
+        {/* Reusable Header from pdf-layout */}
+        <PDFHeader reportDate={reportDate} />
+
+        {/* Table Section */}
+        <View style={styles.section}>
+          <View style={styles.sectionTitle}>
+            <Text>{companyName}</Text>
           </View>
-          <View style={styles.headerRight}>
-            <Text style={styles.reportTitle}>Refund Ledger</Text>
-            <Text style={styles.headerMeta}>{companyName}</Text>
-            <Text style={styles.headerMeta}>Generated: {generatedAt}</Text>
+
+          <View style={styles.table}>
+            {/* Table Headers */}
+            <TableHeader />
+
+            {/* Table Rows */}
+            {refunds.map((refund, i) => (
+              <RefundRow
+                key={i}
+                refund={refund}
+                index={i}
+                isLast={i === refunds.length - 1}
+              />
+            ))}
           </View>
         </View>
 
-        {/* Summary Cards */}
-        <View style={styles.summaryRow}>
-          <View style={styles.summaryCard}>
-            <Text style={styles.summaryLabel}>Total Entries</Text>
-            <Text style={styles.summaryValue}>{refunds.length}</Text>
-          </View>
-          <View style={styles.summaryCard}>
-            <Text style={styles.summaryLabel}>Total Trips</Text>
-            <Text style={styles.summaryValue}>{totalTrips}</Text>
-          </View>
-          <View style={styles.summaryCard}>
-            <Text style={styles.summaryLabel}>Total Refund Amount</Text>
-            <Text style={styles.summaryValue}>
-              {formatCurrency(totalAmount)}
-            </Text>
-          </View>
-        </View>
+        {/* Summary Section */}
+        <SummarySection
+          totalRefunds={refunds.length}
+          totalTrips={totalTrips}
+          totalAmount={totalAmount}
+        />
 
-        {/* Table */}
-        <View style={styles.table}>
-          {/* Header Row */}
-          <View style={styles.tableHeader}>
-            <View style={styles.colSno}>
-              <Text style={styles.thText}>#</Text>
-            </View>
-            <View style={styles.colDate}>
-              <Text style={styles.thText}>Refund Date</Text>
-            </View>
-            <View style={styles.colTrips}>
-              <Text style={[styles.thText, { textAlign: "center" }]}>
-                Trips
-              </Text>
-            </View>
-            <View style={styles.colAmount}>
-              <Text style={[styles.thText, { textAlign: "right" }]}>
-                Refund Amount
-              </Text>
-            </View>
-          </View>
-
-          {/* Data Rows */}
-          {refunds.map((refund, index) => (
-            <View
-              key={index}
-              style={[
-                styles.tableRow,
-                index % 2 !== 0 ? styles.tableRowAlt : {},
-              ]}
-            >
-              <View style={styles.colSno}>
-                <Text style={styles.tdText}>{index + 1}</Text>
-              </View>
-              <View style={styles.colDate}>
-                <Text style={styles.tdText}>
-                  {formatDate(refund.refundDate, "dd MMM yyyy")}
-                </Text>
-              </View>
-              <View style={styles.colTrips}>
-                <Text style={styles.tdTextCenter}>{refund.tripCount}</Text>
-              </View>
-              <View style={styles.colAmount}>
-                <Text style={styles.tdTextRight}>
-                  {formatCurrency(refund.refundAmt)}
-                </Text>
-              </View>
-            </View>
-          ))}
-
-          {/* Footer Total Row */}
-          <View style={styles.tableFooter}>
-            <View style={styles.colSno}>
-              <Text style={styles.footerText} />
-            </View>
-            <View style={styles.colDate}>
-              <Text style={styles.footerText}>Total</Text>
-            </View>
-            <View style={styles.colTrips}>
-              <Text style={[styles.footerText, { textAlign: "center" }]}>
-                {totalTrips}
-              </Text>
-            </View>
-            <View style={styles.colAmount}>
-              <Text style={[styles.footerText, { textAlign: "right" }]}>
-                {formatCurrency(totalAmount)}
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Page Footer */}
-        <View style={styles.pageFooter} fixed>
-          <Text style={styles.pageFooterText}>
-            {AppConfig.company.name} — Refund Ledger
-          </Text>
-          <Text
-            style={styles.pageFooterText}
-            render={({ pageNumber, totalPages }) =>
-              `Page ${pageNumber} of ${totalPages}`
-            }
-          />
-        </View>
+        {/* Reusable Footer from pdf-layout */}
+        <PDFFooter />
       </Page>
     </Document>
   );

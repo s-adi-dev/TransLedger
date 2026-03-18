@@ -1,172 +1,121 @@
 "use client";
 
 import { AppConfig } from "@/lib/config";
+import { fmtAmount } from "@/lib/str";
 import { generateTripNo } from "@/validators";
 import type { z } from "zod";
 import type { tripBaseSchema } from "@/validators/trip.schema";
 import { Document, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 import { formatDate } from "date-fns";
+import { PDFHeader, PDFFooter, pdfLayoutStyles } from "./pdf-layout";
+import { registerFonts } from "./font";
+
+registerFonts();
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
   page: {
-    fontFamily: "Helvetica",
-    fontSize: 10,
-    padding: 40,
-    backgroundColor: "#FFFFFF",
-  },
-
-  // Header
-  headerContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 24,
-    paddingBottom: 16,
-    borderBottomWidth: 2,
-    borderBottomColor: "#1a1a1a",
-  },
-  headerLeft: {},
-  companyName: {
-    fontSize: 18,
-    fontWeight: 700,
-    color: "#1a1a1a",
-    marginBottom: 2,
-  },
-  headerSubtitle: {
-    fontSize: 9,
-    color: "#6b7280",
-  },
-  headerRight: {
-    alignItems: "flex-end",
-  },
-  reportTitle: {
-    fontSize: 13,
-    fontWeight: 600,
-    color: "#1a1a1a",
-    marginBottom: 4,
-  },
-  headerMeta: {
+    fontFamily: "Roboto",
     fontSize: 8,
-    color: "#6b7280",
-    marginBottom: 1,
+    paddingTop: 20,
+    paddingBottom: 40,
+    paddingHorizontal: 20,
+    backgroundColor: "#ffffff",
   },
 
-  // Summary row
-  summaryRow: {
-    flexDirection: "row",
-    gap: 16,
-    marginBottom: 20,
+  // ── Section (per date) ──────────────────────────────────────────────
+  section: {
+    marginBottom: 12,
   },
-  summaryCard: {
-    flex: 1,
-    padding: 12,
-    backgroundColor: "#f9fafb",
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-  },
-  summaryLabel: {
-    fontSize: 8,
-    color: "#6b7280",
-    textTransform: "uppercase" as const,
-    letterSpacing: 0.5,
-    marginBottom: 4,
-  },
-  summaryValue: {
-    fontSize: 16,
-    fontWeight: 700,
+  sectionTitle: {
+    fontSize: 12,
+    fontFamily: "Roboto",
+    fontWeight: "bold",
+    backgroundColor: "#f5f5f5",
     color: "#1a1a1a",
-  },
-
-  // Table
-  table: {
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-    borderRadius: 4,
-  },
-  tableHeader: {
-    flexDirection: "row",
-    backgroundColor: "#f3f4f6",
-    borderBottomWidth: 1,
-    borderBottomColor: "#d1d5db",
-    paddingVertical: 8,
+    padding: 8,
     paddingHorizontal: 10,
+    marginBottom: 0,
+    textAlign: "center",
+    borderWidth: 1,
+    borderBottomWidth: 0,
+    borderColor: "#d0d0d0",
+  },
+
+  // ── Table ──────────────────────────────────────────────────────────────────
+  table: {
+    marginTop: 0,
+    marginBottom: 12,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "#d0d0d0",
+  },
+  tableHeaderRow: {
+    flexDirection: "row",
+    backgroundColor: "#000000",
+    borderBottomWidth: 1,
+    borderBottomColor: "#d0d0d0",
   },
   tableRow: {
     flexDirection: "row",
     borderBottomWidth: 1,
-    borderBottomColor: "#f3f4f6",
-    paddingVertical: 7,
-    paddingHorizontal: 10,
+    borderBottomColor: "#d0d0d0",
+    backgroundColor: "#ffffff",
   },
   tableRowAlt: {
+    flexDirection: "row",
+    borderBottomWidth: 1,
+    borderBottomColor: "#d0d0d0",
     backgroundColor: "#fafafa",
   },
-  tableFooter: {
+  tableRowLast: {
     flexDirection: "row",
-    backgroundColor: "#f3f4f6",
-    borderTopWidth: 2,
-    borderTopColor: "#d1d5db",
-    paddingVertical: 8,
+    borderBottomWidth: 0,
+    backgroundColor: "#ffffff",
+  },
+
+  // ── Table Cells ────────────────────────────────────────────────────────────
+  cellHeader: {
+    fontFamily: "Roboto",
+    fontWeight: "semibold",
+    fontSize: 7,
+    padding: 4,
+    textAlign: "center",
+    color: "#ffffff",
+  },
+  cell: {
+    fontSize: 7,
+    padding: 4,
+    textAlign: "center",
+    color: "#404040",
+  },
+
+  // Columns
+  colSr: { width: "5%" },
+  colTripNo: { width: "15%" },
+  colTruckNo: { width: "20%" },
+  colRoute: { width: "30%" },
+  colDate: { width: "15%" },
+  colAmount: { width: "15%", textAlign: "right" },
+
+  // ── Summary row ────────────────────────────────────────────────────────────
+  summaryRow: {
+    flexDirection: "row",
+    marginTop: 12,
+    paddingVertical: 10,
     paddingHorizontal: 10,
-  },
-
-  // Column widths
-  colSno: { width: "6%" },
-  colTripNo: { width: "12%" },
-  colTruckNo: { width: "14%" },
-  colRoute: { width: "22%" },
-  colDate: { width: "12%" },
-  colMaterialRefund: { width: "12%", textAlign: "right" },
-  colTruckRefund: { width: "12%", textAlign: "right" },
-  colTotalRefund: { width: "10%", textAlign: "right" },
-
-  // Cell text
-  thText: {
-    fontSize: 7.5,
-    fontWeight: 600,
-    color: "#374151",
-    textTransform: "uppercase" as const,
-    letterSpacing: 0.5,
-  },
-  tdText: {
-    fontSize: 9,
-    color: "#1f2937",
-  },
-  tdTextRight: {
-    fontSize: 9,
-    color: "#1f2937",
-    textAlign: "right",
-  },
-  tdTextMuted: {
-    fontSize: 9,
-    color: "#9ca3af",
-    textAlign: "right",
-  },
-  footerText: {
-    fontSize: 10,
-    fontWeight: 700,
-    color: "#1a1a1a",
-  },
-
-  // Page footer
-  pageFooter: {
-    position: "absolute",
-    bottom: 24,
-    left: 40,
-    right: 40,
-    flexDirection: "row",
+    borderWidth: 1,
+    borderColor: "#d0d0d0",
+    backgroundColor: "#f9f9f9",
     justifyContent: "space-between",
     alignItems: "center",
-    borderTopWidth: 1,
-    borderTopColor: "#e5e7eb",
-    paddingTop: 8,
   },
-  pageFooterText: {
-    fontSize: 7,
-    color: "#9ca3af",
+  summaryText: {
+    fontSize: 10,
+    fontFamily: "Roboto",
+    fontWeight: "semibold",
+    color: "#1a1a1a",
   },
 });
 
@@ -180,11 +129,82 @@ interface RefundTripsByDatePdfProps {
   trips: Trip[];
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-function formatCurrency(amount: number): string {
-  return `Rs. ${amount.toLocaleString("en-IN")}`;
+interface TripRowProps {
+  trip: Trip;
+  index: number;
+  isLast: boolean;
 }
+
+// ─── Sub-components ────────────────────────────────────────────────────────────
+
+const TableHeader = () => (
+  <View style={styles.tableHeaderRow} fixed>
+    <Text style={[styles.cellHeader, styles.colSr]}>#</Text>
+    <Text style={[styles.cellHeader, styles.colTripNo]}>TRIP NO</Text>
+    <Text style={[styles.cellHeader, styles.colTruckNo]}>TRUCK NO</Text>
+    <Text style={[styles.cellHeader, styles.colRoute]}>ROUTE</Text>
+    <Text style={[styles.cellHeader, styles.colDate]}>TRIP DATE</Text>
+    <Text style={[styles.cellHeader, styles.colAmount]}>AMOUNT</Text>
+  </View>
+);
+
+const TripRow = ({ trip, index, isLast }: TripRowProps) => {
+  const rowStyle = isLast
+    ? styles.tableRowLast
+    : index % 2 === 0
+      ? styles.tableRow
+      : styles.tableRowAlt;
+
+  const materialRefund = trip.materialPayment?.refund?.refundAmount || 0;
+  const truckRefund = trip.truckPayment?.refund?.refundAmount || 0;
+  // Show truck amount if available, otherwise show material amount
+  const displayAmount = truckRefund > 0 ? truckRefund : materialRefund;
+
+  return (
+    <View style={rowStyle} wrap={false}>
+      <Text style={[styles.cell, styles.colSr]}>{index + 1}</Text>
+      <Text style={[styles.cell, styles.colTripNo]}>
+        {generateTripNo(trip.tripNo)}
+      </Text>
+      <Text style={[styles.cell, styles.colTruckNo]}>{trip.truckNo}</Text>
+      <Text style={[styles.cell, styles.colRoute]}>
+        {`${trip.from} -> ${trip.to}`}
+      </Text>
+      <Text style={[styles.cell, styles.colDate]}>
+        {formatDate(new Date(trip.date), "dd MMM yyyy")}
+      </Text>
+      <Text style={[styles.cell, styles.colAmount]}>
+        {displayAmount > 0 ? fmtAmount(displayAmount) : "—"}
+      </Text>
+    </View>
+  );
+};
+
+interface SummaryProps {
+  totalTrips: number;
+  totalMaterial: number;
+  totalTruck: number;
+  totalRefund: number;
+}
+
+const SummarySection = ({
+  totalTrips,
+  totalMaterial,
+  totalTruck,
+  totalRefund,
+}: SummaryProps) => {
+  // Show truck total if available, otherwise show material total
+  const displayTotal = totalTruck > 0 ? totalTruck : totalMaterial;
+
+  return (
+    <View style={styles.summaryRow}>
+      <Text style={styles.summaryText}>Total Trips: {totalTrips}</Text>
+      <Text style={styles.summaryText}>
+        Total Amount: {fmtAmount(displayTotal)}
+      </Text>
+    </View>
+  );
+};
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
@@ -202,202 +222,49 @@ export function RefundTripsByDatePdf({
     0,
   );
   const totalRefund = totalMaterialRefund + totalTruckRefund;
-  const generatedAt = formatDate(new Date(), "dd MMM yyyy, hh:mm a");
-  const formattedDate = formatDate(new Date(date), "dd MMM yyyy");
+  const reportDate = formatDate(new Date(date), "dd MMM yyyy");
 
   return (
-    <Document>
+    <Document
+      title="Refund Trips by Date Report"
+      author={AppConfig.company.name}
+    >
       <Page size="A4" style={styles.page}>
-        {/* Header */}
-        <View style={styles.headerContainer}>
-          <View style={styles.headerLeft}>
-            <Text style={styles.companyName}>{AppConfig.company.name}</Text>
-            <Text style={styles.headerSubtitle}>{AppConfig.description}</Text>
-          </View>
-          <View style={styles.headerRight}>
-            <Text style={styles.reportTitle}>Refund Trips</Text>
-            <Text style={styles.headerMeta}>{companyName}</Text>
-            <Text style={styles.headerMeta}>Date: {formattedDate}</Text>
-            <Text style={styles.headerMeta}>Generated: {generatedAt}</Text>
-          </View>
-        </View>
+        {/* Reusable Header from pdf-layout */}
+        <PDFHeader reportDate={reportDate} />
 
-        {/* Summary Cards */}
-        <View style={styles.summaryRow}>
-          <View style={styles.summaryCard}>
-            <Text style={styles.summaryLabel}>Total Trips</Text>
-            <Text style={styles.summaryValue}>{trips.length}</Text>
-          </View>
-          <View style={styles.summaryCard}>
-            <Text style={styles.summaryLabel}>Material Refund</Text>
-            <Text style={styles.summaryValue}>
-              {formatCurrency(totalMaterialRefund)}
-            </Text>
-          </View>
-          <View style={styles.summaryCard}>
-            <Text style={styles.summaryLabel}>Truck Refund</Text>
-            <Text style={styles.summaryValue}>
-              {formatCurrency(totalTruckRefund)}
-            </Text>
-          </View>
-          <View style={styles.summaryCard}>
-            <Text style={styles.summaryLabel}>Total Refund</Text>
-            <Text style={styles.summaryValue}>
-              {formatCurrency(totalRefund)}
-            </Text>
-          </View>
-        </View>
-
-        {/* Table */}
-        <View style={styles.table}>
-          {/* Header Row */}
-          <View style={styles.tableHeader}>
-            <View style={styles.colSno}>
-              <Text style={styles.thText}>#</Text>
-            </View>
-            <View style={styles.colTripNo}>
-              <Text style={styles.thText}>Trip No</Text>
-            </View>
-            <View style={styles.colTruckNo}>
-              <Text style={styles.thText}>Truck No</Text>
-            </View>
-            <View style={styles.colRoute}>
-              <Text style={styles.thText}>Route</Text>
-            </View>
-            <View style={styles.colDate}>
-              <Text style={styles.thText}>Trip Date</Text>
-            </View>
-            <View style={styles.colMaterialRefund}>
-              <Text style={[styles.thText, { textAlign: "right" }]}>
-                Material
-              </Text>
-            </View>
-            <View style={styles.colTruckRefund}>
-              <Text style={[styles.thText, { textAlign: "right" }]}>
-                Truck
-              </Text>
-            </View>
-            <View style={styles.colTotalRefund}>
-              <Text style={[styles.thText, { textAlign: "right" }]}>
-                Total
-              </Text>
-            </View>
+        {/* Table Section */}
+        <View style={styles.section}>
+          <View style={styles.sectionTitle}>
+            <Text>{companyName}</Text>
           </View>
 
-          {/* Data Rows */}
-          {trips.map((trip, index) => {
-            const materialRefund =
-              trip.materialPayment?.refund?.refundAmount || 0;
-            const truckRefund = trip.truckPayment?.refund?.refundAmount || 0;
-            const tripTotal = materialRefund + truckRefund;
+          <View style={styles.table}>
+            {/* Table Headers */}
+            <TableHeader />
 
-            return (
-              <View
+            {/* Table Rows */}
+            {trips.map((trip, i) => (
+              <TripRow
                 key={trip.id}
-                style={[
-                  styles.tableRow,
-                  index % 2 !== 0 ? styles.tableRowAlt : {},
-                ]}
-              >
-                <View style={styles.colSno}>
-                  <Text style={styles.tdText}>{index + 1}</Text>
-                </View>
-                <View style={styles.colTripNo}>
-                  <Text style={styles.tdText}>
-                    {generateTripNo(trip.tripNo)}
-                  </Text>
-                </View>
-                <View style={styles.colTruckNo}>
-                  <Text style={styles.tdText}>{trip.truckNo}</Text>
-                </View>
-                <View style={styles.colRoute}>
-                  <Text style={styles.tdText}>
-                    {trip.from} → {trip.to}
-                  </Text>
-                </View>
-                <View style={styles.colDate}>
-                  <Text style={styles.tdText}>
-                    {formatDate(new Date(trip.date), "dd MMM yyyy")}
-                  </Text>
-                </View>
-                <View style={styles.colMaterialRefund}>
-                  <Text
-                    style={
-                      materialRefund > 0
-                        ? styles.tdTextRight
-                        : styles.tdTextMuted
-                    }
-                  >
-                    {materialRefund > 0
-                      ? formatCurrency(materialRefund)
-                      : "—"}
-                  </Text>
-                </View>
-                <View style={styles.colTruckRefund}>
-                  <Text
-                    style={
-                      truckRefund > 0 ? styles.tdTextRight : styles.tdTextMuted
-                    }
-                  >
-                    {truckRefund > 0 ? formatCurrency(truckRefund) : "—"}
-                  </Text>
-                </View>
-                <View style={styles.colTotalRefund}>
-                  <Text style={styles.tdTextRight}>
-                    {formatCurrency(tripTotal)}
-                  </Text>
-                </View>
-              </View>
-            );
-          })}
-
-          {/* Footer Total Row */}
-          <View style={styles.tableFooter}>
-            <View style={styles.colSno}>
-              <Text style={styles.footerText} />
-            </View>
-            <View style={styles.colTripNo}>
-              <Text style={styles.footerText} />
-            </View>
-            <View style={styles.colTruckNo}>
-              <Text style={styles.footerText} />
-            </View>
-            <View style={styles.colRoute}>
-              <Text style={styles.footerText} />
-            </View>
-            <View style={styles.colDate}>
-              <Text style={styles.footerText}>Total</Text>
-            </View>
-            <View style={styles.colMaterialRefund}>
-              <Text style={[styles.footerText, { textAlign: "right" }]}>
-                {formatCurrency(totalMaterialRefund)}
-              </Text>
-            </View>
-            <View style={styles.colTruckRefund}>
-              <Text style={[styles.footerText, { textAlign: "right" }]}>
-                {formatCurrency(totalTruckRefund)}
-              </Text>
-            </View>
-            <View style={styles.colTotalRefund}>
-              <Text style={[styles.footerText, { textAlign: "right" }]}>
-                {formatCurrency(totalRefund)}
-              </Text>
-            </View>
+                trip={trip}
+                index={i}
+                isLast={i === trips.length - 1}
+              />
+            ))}
           </View>
         </View>
 
-        {/* Page Footer */}
-        <View style={styles.pageFooter} fixed>
-          <Text style={styles.pageFooterText}>
-            {AppConfig.company.name} — Refund Trips
-          </Text>
-          <Text
-            style={styles.pageFooterText}
-            render={({ pageNumber, totalPages }) =>
-              `Page ${pageNumber} of ${totalPages}`
-            }
-          />
-        </View>
+        {/* Summary Section */}
+        <SummarySection
+          totalTrips={trips.length}
+          totalMaterial={totalMaterialRefund}
+          totalTruck={totalTruckRefund}
+          totalRefund={totalRefund}
+        />
+
+        {/* Reusable Footer from pdf-layout */}
+        <PDFFooter />
       </Page>
     </Document>
   );
