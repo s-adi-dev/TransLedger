@@ -231,6 +231,7 @@ export default function TripForm() {
       <PartyPaymentSection
         title="Material Party Payment"
         icon={<Package className="h-5 w-5" />}
+        metaData={{ date: form.date, truckNo: form.truckNo }}
         payment={form.materialPayment}
         parties={companies}
         partyType="material"
@@ -244,6 +245,7 @@ export default function TripForm() {
       <PartyPaymentSection
         title="Truck Party Payment"
         icon={<Truck className="h-5 w-5" />}
+        metaData={{ date: form.date, truckNo: form.truckNo }}
         payment={form.truckPayment}
         parties={companies}
         partyType="truck"

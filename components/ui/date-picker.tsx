@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, X } from "lucide-react";
 
 interface DatePickerProps {
   id?: string;
@@ -32,33 +32,45 @@ export function DatePicker({
   align = "center",
   disabled = false,
 }: DatePickerProps) {
+  const handleClear = () => {
+    if (onChange) onChange(undefined);
+  };
+
   return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <Button
-          id={id}
-          variant="outline"
-          disabled={disabled}
-          className={cn(
-            "w-full justify-start text-left font-normal",
-            !value && "text-muted-foreground",
-            buttonClassName,
-          )}
-        >
-          <CalendarIcon className="mr-2 h-4 w-4" />
-          {value ? format(value, "PPP") : <span>{placeholder}</span>}
+    <div className="grow flex gap-2">
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button
+            id={id}
+            variant="outline"
+            disabled={disabled}
+            className={cn(
+              "w-full justify-start text-left font-normal",
+              !value && "text-muted-foreground",
+              buttonClassName,
+            )}
+          >
+            <CalendarIcon className="mr-2 h-4 w-4" />
+            {value ? format(value, "PPP") : <span>{placeholder}</span>}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-64 p-0 border-0" align={align}>
+          <Calendar
+            mode="single"
+            selected={value || undefined}
+            onSelect={onChange}
+            className={cn("w-full rounded-md border shadow", className)}
+            captionLayout="dropdown"
+            disabled={disabled}
+          />
+        </PopoverContent>
+      </Popover>
+
+      {value && (
+        <Button variant="outline" onClick={handleClear} disabled={disabled}>
+          <X className="h-4 w-4" />
         </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-64 p-0 border-0" align={align}>
-        <Calendar
-          mode="single"
-          selected={value || undefined}
-          onSelect={onChange}
-          className={cn("w-full rounded-md border shadow", className)}
-          captionLayout="dropdown"
-          disabled={disabled}
-        />
-      </PopoverContent>
-    </Popover>
+      )}
+    </div>
   );
 }

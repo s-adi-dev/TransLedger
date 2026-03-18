@@ -80,45 +80,21 @@ export function BiltiSection({
             </FormField>
 
             <FormField label="Received Date" htmlFor="bilti-received-date">
-              <div className="flex gap-2">
-                <DatePicker
-                  id="bilti-received-date"
-                  value={bilti.receivedDate}
-                  onChange={(date) =>
-                    handleChange("receivedDate", date || null)
-                  }
-                  placeholder="Pick received date"
-                />
-                {bilti.receivedDate && (
-                  <Button
-                    variant="outline"
-                    onClick={() => handleChange("receivedDate", null)}
-                  >
-                    <X />
-                  </Button>
-                )}
-              </div>
+              <DatePicker
+                id="bilti-received-date"
+                value={bilti.receivedDate}
+                onChange={(date) => handleChange("receivedDate", date || null)}
+                placeholder="Pick received date"
+              />
             </FormField>
 
             <FormField label="Submitted Date" htmlFor="bilti-submitted-date">
-              <div className="flex gap-2">
-                <DatePicker
-                  id="bilti-submitted-date"
-                  value={bilti.submittedDate}
-                  onChange={(date) =>
-                    handleChange("submittedDate", date || null)
-                  }
-                  placeholder="Pick submitted date"
-                />
-                {bilti.submittedDate && (
-                  <Button
-                    variant="outline"
-                    onClick={() => handleChange("submittedDate", null)}
-                  >
-                    <X />
-                  </Button>
-                )}
-              </div>
+              <DatePicker
+                id="bilti-submitted-date"
+                value={bilti.submittedDate}
+                onChange={(date) => handleChange("submittedDate", date || null)}
+                placeholder="Pick submitted date"
+              />
             </FormField>
           </div>
         </CardContent>

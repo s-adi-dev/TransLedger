@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { ExtraChargeType, PartyPaymentInput, RefundInput } from "@/validators";
+import { formatDate } from "date-fns";
 import { X } from "lucide-react";
 import { ChangeEvent, useState } from "react";
 
@@ -26,6 +27,7 @@ interface Party {
 interface PartyPaymentSectionProps {
   title: string;
   icon: React.ReactNode;
+  metaData: { date: Date; truckNo: string };
   payment: PartyPaymentInput;
   parties: Party[];
   partyType: "material" | "truck";
@@ -36,6 +38,7 @@ interface PartyPaymentSectionProps {
 export function PartyPaymentSection({
   title,
   icon,
+  metaData,
   payment,
   parties,
   partyType,
@@ -104,10 +107,17 @@ export function PartyPaymentSection({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg flex items-center gap-2">
-          {icon}
-          {title}
-          {required && <span className="text-destructive">*</span>}
+        <CardTitle className="text-lg flex justify-between items-center gap-2">
+          <span className="flex items-center gap-2">
+            {icon}
+            {title}
+            {required && <span className="text-destructive">*</span>}
+          </span>
+          <span className="text-sm font-normal text-muted-foreground flex items-center gap-2">
+            <span>Date: {formatDate(metaData.date, "MMMM do, yyyy")}</span>
+            <span>|</span>
+            <span>Truck No: {metaData.truckNo || "Not Filled"}</span>
+          </span>
         </CardTitle>
       </CardHeader>
 
@@ -155,24 +165,14 @@ export function PartyPaymentSection({
           </FormField>
 
           <FormField label="Advance Date" htmlFor={`${partyType}-advance-date`}>
-            <div className="flex gap-2">
-              <DatePicker
-                id={`${partyType}-advance-date`}
-                value={payment.advanceDate}
-                onChange={(date) =>
-                  handleFieldChange("advanceDate", date || null)
-                }
-                placeholder="Select date"
-              />
-              {payment.advanceDate && (
-                <Button
-                  variant="outline"
-                  onClick={() => handleFieldChange("advanceDate", null)}
-                >
-                  <X />
-                </Button>
-              )}
-            </div>
+            <DatePicker
+              id={`${partyType}-advance-date`}
+              value={payment.advanceDate}
+              onChange={(date) =>
+                handleFieldChange("advanceDate", date || null)
+              }
+              placeholder="Select date"
+            />
           </FormField>
         </div>
 
@@ -297,26 +297,16 @@ export function PartyPaymentSection({
         >
           <div className="flex gap-2">
             <Input className="w-44" value={balanceAmount} disabled />
-            <div className="flex-grow flex gap-2">
-              <DatePicker
-                className="w-full"
-                id={`${partyType}-final-date`}
-                value={payment.finalPaymentDate}
-                onChange={(date) =>
-                  handleFieldChange("finalPaymentDate", date || null)
-                }
-                placeholder="Select date"
-              />
 
-              {payment.finalPaymentDate && (
-                <Button
-                  variant="outline"
-                  onClick={() => handleFieldChange("finalPaymentDate", null)}
-                >
-                  <X />
-                </Button>
-              )}
-            </div>
+            <DatePicker
+              className="w-full"
+              id={`${partyType}-final-date`}
+              value={payment.finalPaymentDate}
+              onChange={(date) =>
+                handleFieldChange("finalPaymentDate", date || null)
+              }
+              placeholder="Select date"
+            />
           </div>
         </FormField>
 
