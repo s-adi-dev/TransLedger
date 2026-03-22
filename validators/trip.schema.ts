@@ -197,22 +197,26 @@ export const updatePartyPaymentSchema = z
     let paymentStatus: "pending" | "advance" | "completed" | undefined =
       undefined;
 
-    if (data.finalPaymentDate !== undefined) {
-      paymentStatus = data.finalPaymentDate ? "completed" : undefined;
-    } else if (
-      data.advanceAmount !== undefined &&
-      data.advanceDate !== undefined
-    ) {
-      if (data.advanceAmount > 0 && data.advanceDate) {
+    // Check if any payment status related field is being updated
+    const isUpdatingPaymentStatus =
+      data.finalPaymentDate !== undefined ||
+      data.advanceAmount !== undefined ||
+      data.advanceDate !== undefined;
+
+    if (isUpdatingPaymentStatus) {
+      // Prioritize finalPaymentDate if it has a value
+      if (data.finalPaymentDate) {
+        paymentStatus = "completed";
+      } else if ((data.advanceAmount ?? 0) > 0 && data.advanceDate) {
         paymentStatus = "advance";
-      } else if (data.advanceAmount === 0 && !data.advanceDate) {
+      } else {
         paymentStatus = "pending";
       }
     }
 
     return {
       ...data,
-      ...(paymentStatus && { paymentStatus }),
+      ...(paymentStatus !== undefined && { paymentStatus }),
     };
   });
 
@@ -253,8 +257,8 @@ export const tripQuerySchema = z.object({
   paymentStatus: PaymentStatusEnum.optional(),
   materialPartyId: z.string().uuid().optional(),
   truckPartyId: z.string().uuid().optional(),
-  page: z.coerce.number().min(1).default(1),
-  limit: z.coerce.number().min(1).max(100).default(20),
+  page: z.coerce.number().min(1).optional(),
+  limit: z.coerce.number().min(1).max(100).optional(),
 });
 
 // Response Schemas
@@ -350,6 +354,7 @@ export type CreateTripType = z.infer<typeof createTripSchema>;
 export type UpdateTripType = z.infer<typeof updateTripSchema>;
 export type TripQueryType = z.infer<typeof tripQuerySchema>;
 
+export type TripBaseType = z.infer<typeof tripBaseSchema>;
 export type TripResponse = z.infer<typeof tripResponseSchema>;
 export type AllTripResponse = z.infer<typeof allTripResponseSchema>;
 export type LocationsResponse = z.infer<typeof locationsResponseSchema>;
