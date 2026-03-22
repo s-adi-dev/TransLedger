@@ -19,6 +19,8 @@ export const tripKeys = {
   lists: () => [...tripKeys.all, "list"] as const,
   list: (filters: TripFilters, page: number, limit: number) =>
     [...tripKeys.lists(), { filters, page, limit }] as const,
+  allTrips: (filters: TripFilters) =>
+    [...tripKeys.all, "allTrips", filters] as const,
   details: () => [...tripKeys.all, "detail"] as const,
   detail: (id: string) => [...tripKeys.details(), id] as const,
   locations: () => [...tripKeys.all, "locations"] as const,
@@ -65,6 +67,41 @@ export function useTrips() {
 }
 
 /**
+ * Fetch all trips without pagination (for reports and printing)
+ */
+export function useAllTrips() {
+  const filters = useTripStore((state) => state.filters);
+
+  return useQuery<AllTripResponse>({
+    queryKey: tripKeys.allTrips(filters),
+    queryFn: async () => {
+      const params = new URLSearchParams();
+
+      if (filters.search) params.append("search", filters.search);
+      if (filters.truckNo) params.append("truckNo", filters.truckNo);
+      if (filters.from) params.append("from", filters.from);
+      if (filters.to) params.append("to", filters.to);
+      if (filters.dateFrom)
+        params.append("dateFrom", filters.dateFrom.toISOString());
+      if (filters.dateTo) params.append("dateTo", filters.dateTo.toISOString());
+      if (filters.biltiStatus)
+        params.append("biltiStatus", filters.biltiStatus);
+      if (filters.paymentStatus)
+        params.append("paymentStatus", filters.paymentStatus);
+      if (filters.materialPartyId)
+        params.append("materialPartyId", filters.materialPartyId);
+      if (filters.truckPartyId)
+        params.append("truckPartyId", filters.truckPartyId);
+
+      const { data } = await axios.get<AllTripResponse>(
+        `/api/trips?${params.toString()}`,
+      );
+      return data;
+    },
+  });
+}
+
+/**
  * Fetch single trip by ID
  */
 export function useTrip(id: string) {
@@ -86,7 +123,10 @@ export function useCreateTrip() {
 
   return useMutation<TripResponse, Error, CreateTripType>({
     mutationFn: async (data) => {
-      const { data: result } = await axios.post<TripResponse>("/api/trips", data);
+      const { data: result } = await axios.post<TripResponse>(
+        "/api/trips",
+        data,
+      );
       return result;
     },
     onSuccess: () => {
@@ -104,7 +144,10 @@ export function useUpdateTrip() {
   return useMutation<TripResponse, Error, { id: string; data: UpdateTripType }>(
     {
       mutationFn: async ({ id, data }) => {
-        const { data: result } = await axios.put<TripResponse>(`/api/trips/${id}`, data);
+        const { data: result } = await axios.put<TripResponse>(
+          `/api/trips/${id}`,
+          data,
+        );
         return result;
       },
       onSuccess: (_, { id }) => {
@@ -123,7 +166,9 @@ export function useDeleteTrip() {
 
   return useMutation<TripResponse, Error, string>({
     mutationFn: async (id) => {
-      const { data: result } = await axios.delete<TripResponse>(`/api/trips/${id}`);
+      const { data: result } = await axios.delete<TripResponse>(
+        `/api/trips/${id}`,
+      );
       return result;
     },
     onSuccess: (_, id) => {
@@ -142,7 +187,10 @@ export function useAddBilti() {
   return useMutation<TripResponse, Error, { tripId: string; data: BiltiInput }>(
     {
       mutationFn: async ({ tripId, data }) => {
-        const { data: result } = await axios.post<TripResponse>(`/api/trips/${tripId}/bilti`, data);
+        const { data: result } = await axios.post<TripResponse>(
+          `/api/trips/${tripId}/bilti`,
+          data,
+        );
         return result;
       },
       onSuccess: (_, { tripId }) => {
@@ -165,7 +213,10 @@ export function useUpdateBilti() {
     { tripId: string; data: UpdateBilti }
   >({
     mutationFn: async ({ tripId, data }) => {
-      const { data: result } = await axios.put<TripResponse>(`/api/trips/${tripId}/bilti`, data);
+      const { data: result } = await axios.put<TripResponse>(
+        `/api/trips/${tripId}/bilti`,
+        data,
+      );
       return result;
     },
     onSuccess: (_, { tripId }) => {
@@ -187,7 +238,10 @@ export function useUpdatePayment() {
     { tripId: string; data: UpdatePartyPayment; type: PartyType }
   >({
     mutationFn: async ({ tripId, data, type }) => {
-      const { data: result } = await axios.put<TripResponse>(`/api/trips/${tripId}/payment`, { type, ...data });
+      const { data: result } = await axios.put<TripResponse>(
+        `/api/trips/${tripId}/payment`,
+        { type, ...data },
+      );
       return result;
     },
     onSuccess: (_, { tripId }) => {

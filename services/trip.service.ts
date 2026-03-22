@@ -32,7 +32,8 @@ export class TripService {
       console.error("Error in getTripById:", error);
       return {
         success: false,
-        message: error instanceof Error ? error.message : "Failed to retrieve trip",
+        message:
+          error instanceof Error ? error.message : "Failed to retrieve trip",
       };
     }
   }
@@ -40,9 +41,18 @@ export class TripService {
   async getAllTrips(params: TripQueryType): Promise<AllTripResponse> {
     try {
       const {
-        search, truckNo, from, to, dateFrom, dateTo,
-        biltiStatus, paymentStatus, materialPartyId, truckPartyId,
-        page, limit,
+        search,
+        truckNo,
+        from,
+        to,
+        dateFrom,
+        dateTo,
+        biltiStatus,
+        paymentStatus,
+        materialPartyId,
+        truckPartyId,
+        page,
+        limit,
       } = params;
 
       const where: Prisma.TripWhereInput = {};
@@ -97,28 +107,45 @@ export class TripService {
         ];
       }
 
-      const skip = (page - 1) * limit;
       const total = await prisma.trip.count({ where });
 
-      const trips = await prisma.trip.findMany({
+      // Apply pagination only if page and limit are provided
+      const queryOptions: Prisma.TripFindManyArgs = {
         where,
-        skip,
-        take: limit,
         include: TRIP_INCLUDE_FULL,
         orderBy: { date: "desc" },
-      });
+      };
+
+      let pagination:
+        | { page: number; limit: number; total: number; totalPages: number }
+        | undefined;
+
+      if (page !== undefined && limit !== undefined) {
+        const skip = (page - 1) * limit;
+        queryOptions.skip = skip;
+        queryOptions.take = limit;
+        pagination = {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        };
+      }
+
+      const trips = await prisma.trip.findMany(queryOptions);
 
       return {
         success: true,
         message: "Trips retrieved successfully",
         trips,
-        pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+        pagination,
       };
     } catch (error) {
       console.error("Error in getAllTrips:", error);
       return {
         success: false,
-        message: error instanceof Error ? error.message : "Failed to retrieve trips",
+        message:
+          error instanceof Error ? error.message : "Failed to retrieve trips",
       };
     }
   }
@@ -133,7 +160,8 @@ export class TripService {
       });
       const nextTripNo = (last?.tripNo ?? 0) + 1;
 
-      const { refund: materialRefund, ...materialPaymentData } = materialPayment || {};
+      const { refund: materialRefund, ...materialPaymentData } =
+        materialPayment || {};
       const { refund: truckRefund, ...truckPaymentData } = truckPayment || {};
 
       const trip = await prisma.trip.create({
@@ -162,7 +190,8 @@ export class TripService {
       console.error("Error in createTrip:", error);
       return {
         success: false,
-        message: error instanceof Error ? error.message : "Failed to create trip",
+        message:
+          error instanceof Error ? error.message : "Failed to create trip",
       };
     }
   }
@@ -185,7 +214,8 @@ export class TripService {
       console.error("Error in updateTrip:", error);
       return {
         success: false,
-        message: error instanceof Error ? error.message : "Failed to update trip",
+        message:
+          error instanceof Error ? error.message : "Failed to update trip",
       };
     }
   }
@@ -204,7 +234,8 @@ export class TripService {
       console.error("Error in deleteTrip:", error);
       return {
         success: false,
-        message: error instanceof Error ? error.message : "Failed to delete trip",
+        message:
+          error instanceof Error ? error.message : "Failed to delete trip",
       };
     }
   }
@@ -216,7 +247,10 @@ export class TripService {
         return { success: false, message: "Trip does not exist" };
       }
       if (existing.trip.bilti) {
-        return { success: false, message: "Bilti already exists for this trip. Use update instead." };
+        return {
+          success: false,
+          message: "Bilti already exists for this trip. Use update instead.",
+        };
       }
 
       await prisma.bilti.create({ data: { ...data, tripId } });
@@ -238,7 +272,10 @@ export class TripService {
         return { success: false, message: "Trip does not exist" };
       }
       if (!existing.trip.bilti) {
-        return { success: false, message: "Bilti does not exist for this trip" };
+        return {
+          success: false,
+          message: "Bilti does not exist for this trip",
+        };
       }
 
       await prisma.bilti.update({ where: { tripId }, data });
@@ -248,7 +285,8 @@ export class TripService {
       console.error("Error in updateBilti:", error);
       return {
         success: false,
-        message: error instanceof Error ? error.message : "Failed to update bilti",
+        message:
+          error instanceof Error ? error.message : "Failed to update bilti",
       };
     }
   }
@@ -264,9 +302,10 @@ export class TripService {
         return { success: false, message: "Trip does not exist" };
       }
 
-      const payment = paymentType === "material"
-        ? existing.trip.materialPayment
-        : existing.trip.truckPayment;
+      const payment =
+        paymentType === "material"
+          ? existing.trip.materialPayment
+          : existing.trip.truckPayment;
 
       if (!payment) {
         return {
@@ -275,16 +314,20 @@ export class TripService {
         };
       }
 
-      await prisma.partyPaymentDetails.update({ where: { id: payment.id }, data });
+      await prisma.partyPaymentDetails.update({
+        where: { id: payment.id },
+        data,
+      });
 
       return await this.getTripById(tripId);
     } catch (error) {
       console.error("Error in updateTripPayment:", error);
       return {
         success: false,
-        message: error instanceof Error
-          ? error.message
-          : `Failed to update ${capitalizeWord(paymentType)} payment`,
+        message:
+          error instanceof Error
+            ? error.message
+            : `Failed to update ${capitalizeWord(paymentType)} payment`,
       };
     }
   }
@@ -295,7 +338,10 @@ export class TripService {
         select: { from: true, to: true },
       });
 
-      const locationMap = new Map<string, { location: string; type: "from" | "to" }>();
+      const locationMap = new Map<
+        string,
+        { location: string; type: "from" | "to" }
+      >();
 
       trips.forEach((trip) => {
         const fromKey = `${trip.from}-from`;
@@ -317,7 +363,10 @@ export class TripService {
       console.error("Error in getUniqueLocations:", error);
       return {
         success: false,
-        message: error instanceof Error ? error.message : "Failed to retrieve unique locations",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Failed to retrieve unique locations",
       };
     }
   }
