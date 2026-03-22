@@ -52,7 +52,6 @@ const SIDEBAR_CONFIG = {
     { icon: Banknote, label: "Payment Ledger", href: "/payment-ledger" },
     { icon: Bookmark, label: "Refund Ledger", href: "/refund-ledger" },
     { icon: ReceiptText, label: "Forms", href: "/forms" },
-    { icon: ChartPie, label: "Reports", href: "/reports" },
   ],
 } as const;
 
