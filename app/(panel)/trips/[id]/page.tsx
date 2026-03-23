@@ -204,9 +204,8 @@ export default function TripDetailPage({ params }: TripDetailProps) {
       payment.damageCharge +
       payment.extraChargesAmount;
     const totalDeductions = payment.tdsAmount + payment.commissionAmount;
-    const netAmount = payment.freightAmount - totalDeductions + totalCharges;
-    const balanceAmount =
-      netAmount - payment.advanceAmount - (payment.refund?.refundAmount || 0);
+    const netAmount = payment.freightAmount - payment.advanceAmount;
+    const balanceAmount = netAmount - totalCharges - totalDeductions;
     return { rate, totalCharges, totalDeductions, netAmount, balanceAmount };
   };
 
@@ -408,7 +407,6 @@ export default function TripDetailPage({ params }: TripDetailProps) {
 
       {/* ─── Payment Details ─────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Material Payment */}
         {materialPayment && (
           <PaymentCard
             title="Material Payment"
@@ -419,8 +417,6 @@ export default function TripDetailPage({ params }: TripDetailProps) {
             onEditRefund={() => setEditRefundType("material")}
           />
         )}
-
-        {/* Truck Payment */}
         {truckPayment && (
           <PaymentCard
             title="Truck Payment"
@@ -550,18 +546,48 @@ function PaymentCard({
           />
         </div>
 
-        {/* Freight & Charges */}
-        <div className="space-y-1">
+        {/* Weight & Rate */}
+        <div className="border-t pt-3 space-y-1">
           <p className="text-xs font-semibold text-muted-foreground mb-2">
-            FREIGHT & CHARGES
+            WEIGHT & RATE
           </p>
           <DetailRow label="Weight" value={`${weight} Kg`} />
           <DetailRow label="Rate" value={formatCurrency(calc.rate)} />
+        </div>
+
+        {/* Payment Details */}
+        <div className="border-t pt-3 space-y-1">
+          <p className="text-xs font-semibold text-muted-foreground mb-2">
+            PAYMENT DETAILS
+          </p>
           <DetailRow
             label="Freight Amount"
             value={formatCurrency(payment.freightAmount)}
             highlight
           />
+          {payment.advanceAmount > 0 && payment.advanceDate && (
+            <DetailRow
+              label="Advance Paid"
+              value={
+                <span className="flex items-center gap-3">
+                  <span>{formatDate(payment.advanceDate, "dd MMM yyyy")}</span>
+                  <span>{formatCurrency(payment.advanceAmount)}</span>
+                </span>
+              }
+            />
+          )}
+          <DetailRow
+            label="Net Payable"
+            value={formatCurrency(calc.netAmount)}
+            highlight
+          />
+        </div>
+
+        {/* Charges & Deductions */}
+        <div className="border-t pt-3 space-y-1">
+          <p className="text-xs font-semibold text-muted-foreground mb-2">
+            CHARGES & DEDUCTIONS
+          </p>
           <DetailRow
             label="Loading Charge"
             value={formatCurrency(payment.loadingCharge)}
@@ -576,6 +602,14 @@ function PaymentCard({
               value={formatCurrency(payment.damageCharge)}
             />
           )}
+          <DetailRow
+            label="TDS Amount"
+            value={formatCurrency(payment.tdsAmount)}
+          />
+          <DetailRow
+            label="Commission"
+            value={formatCurrency(payment.commissionAmount)}
+          />
           {payment.extraChargesAmount > 0 && (
             <>
               <DetailRow
@@ -592,92 +626,57 @@ function PaymentCard({
               )}
             </>
           )}
-        </div>
-
-        {/* Deductions */}
-        <div className="border-t pt-3 space-y-1">
-          <p className="text-xs font-semibold text-muted-foreground mb-2">
-            DEDUCTIONS
-          </p>
-          <DetailRow
-            label="TDS Amount"
-            value={formatCurrency(payment.tdsAmount)}
-          />
-          <DetailRow
-            label="Commission"
-            value={formatCurrency(payment.commissionAmount)}
-          />
-        </div>
-
-        {/* Payment Summary */}
-        <div className="border-t pt-3 space-y-1">
-          <p className="text-xs font-semibold text-muted-foreground mb-2">
-            PAYMENT DETAILS
-          </p>
-          <DetailRow
-            label="Net Payable"
-            value={formatCurrency(calc.netAmount)}
-            highlight
-          />
-          {payment.advanceAmount > 0 && payment.advanceDate && (
-            <>
-              <DetailRow
-                label="Advance Paid"
-                value={formatCurrency(payment.advanceAmount)}
-              />
-              <DetailRow
-                label="Advance Date"
-                value={formatDate(payment.advanceDate, "dd MMM yyyy")}
-              />
-            </>
-          )}
-          {/* Refund Section */}
-          <div className="border-t pt-3 mt-2 space-y-1">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-xs font-semibold text-muted-foreground">
-                REFUND
-              </p>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onEditRefund}
-                className="gap-1 text-xs h-7 px-2"
-              >
-                <Edit className="h-3 w-3" />
-                {payment.refund ? "Edit" : "Add"}
-              </Button>
-            </div>
-            {payment.refund ? (
-              <>
-                <DetailRow
-                  label="Refund Amount"
-                  value={formatCurrency(payment.refund.refundAmount)}
-                  highlight
-                />
-                <DetailRow
-                  label="Refund Date"
-                  value={formatDate(payment.refund.refundDate, "dd MMM yyyy")}
-                />
-              </>
-            ) : (
-              <p className="text-xs text-muted-foreground italic">
-                No refund added
-              </p>
-            )}
-          </div>
-          {payment.finalPaymentDate && (
-            <DetailRow
-              label="Final Payment"
-              value={formatDate(payment.finalPaymentDate, "dd MMM yyyy")}
-            />
-          )}
-          <div className="pt-2 mt-2 border-t">
+          <div className="pt-2 mt-1 border-t">
             <DetailRow
               label="Balance Due"
-              value={formatCurrency(calc.balanceAmount)}
+              value={
+                <span className="flex items-center gap-3">
+                  {payment.finalPaymentDate && (
+                    <span>
+                      {formatDate(payment.finalPaymentDate, "dd MMM yyyy")}
+                    </span>
+                  )}
+                  <span>{formatCurrency(calc.balanceAmount)}</span>
+                </span>
+              }
               highlight
             />
           </div>
+        </div>
+
+        {/* Refund */}
+        <div className="border-t pt-3 space-y-1">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-xs font-semibold text-muted-foreground">
+              REFUND
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onEditRefund}
+              className="gap-1 text-xs h-7 px-2"
+            >
+              <Edit className="h-3 w-3" />
+              {payment.refund ? "Edit" : "Add"}
+            </Button>
+          </div>
+          {payment.refund ? (
+            <>
+              <DetailRow
+                label="Refund Amount"
+                value={formatCurrency(payment.refund.refundAmount)}
+                highlight
+              />
+              <DetailRow
+                label="Refund Date"
+                value={formatDate(payment.refund.refundDate, "dd MMM yyyy")}
+              />
+            </>
+          ) : (
+            <p className="text-xs text-muted-foreground italic">
+              No refund added
+            </p>
+          )}
         </div>
       </CardContent>
     </Card>

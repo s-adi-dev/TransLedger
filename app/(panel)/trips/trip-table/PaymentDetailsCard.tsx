@@ -150,22 +150,6 @@ export function PaymentDetailsCard({ trip, type }: PaymentDetailsCardProps) {
         )}
       </div>
 
-      {/* Refund */}
-      {payment.refund && (
-        <div className="pt-2 border-t">
-          <p className="text-xs font-semibold text-muted-foreground mb-2">
-            REFUND
-          </p>
-          <DetailRow
-            label="Refund Amount"
-            value={formatCurrency(payment.refund.refundAmount)}
-          />
-          <DetailRow
-            label="Refund Date"
-            value={formatDate(payment.refund.refundDate, "dd MMM yyyy")}
-          />
-        </div>
-      )}
       <div className="pt-2 mt-2 border-t">
         <DetailRow
           label="Balance Due"
@@ -182,6 +166,23 @@ export function PaymentDetailsCard({ trip, type }: PaymentDetailsCardProps) {
           highlight
         />
       </div>
+
+      {/* Refund */}
+      {payment.refund && (
+        <div className="pt-2 mt-2 border-t">
+          <p className="text-xs font-semibold text-muted-foreground mb-2">
+            REFUND
+          </p>
+          <DetailRow
+            label="Refund Amount"
+            value={formatCurrency(payment.refund.refundAmount)}
+          />
+          <DetailRow
+            label="Refund Date"
+            value={formatDate(payment.refund.refundDate, "dd MMM yyyy")}
+          />
+        </div>
+      )}
     </DetailCard>
   );
 }
