@@ -387,12 +387,10 @@ const SummarySection = ({
   const { fields } = options;
 
   // Default to true (shown) if the flag is not explicitly set to false
-  const showTrips = fields.summaryTotalTrips !== false;
   const showAdvance = fields.summaryTotalAdvance !== false;
   const showBalance = fields.summaryTotalBalance !== false;
 
   const items = [
-    showTrips && { label: "Total Trips", value: String(totalTrips) },
     showAdvance && { label: "Total Advance", value: fmtAmount(totalAdvance) },
     showBalance && { label: "Total Balance", value: fmtAmount(totalBalance) },
   ].filter(Boolean) as { label: string; value: string }[];
