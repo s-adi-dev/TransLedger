@@ -219,24 +219,20 @@ const getVisibleColumns = (options: TripPDFOptions): ColumnConfig[] => {
   if (fields.balance) visible.push(allColumns.balance);
 
   // ── Dynamic width redistribution ─────────────────────────────────────────
-  // SR is fixed at 4%. Remaining 96% is distributed among the other columns.
   const SR_WIDTH = 4;
   const TOTAL_WIDTH = 100;
   const distributableWidth = TOTAL_WIDTH - SR_WIDTH;
 
-  // Sum the base widths of visible non-SR columns
-  const nonSrColumns = visible.slice(1); // everything after SR
+  const nonSrColumns = visible.slice(1);
   const usedWidth = nonSrColumns.reduce(
     (sum, col) => sum + parseFloat(col.width),
     0,
   );
 
-  // Leftover space to spread evenly
   const leftover = distributableWidth - usedWidth;
   const bonusPerColumn =
     nonSrColumns.length > 0 ? leftover / nonSrColumns.length : 0;
 
-  // Rebuild the final array with adjusted widths
   return [
     { ...allColumns.sr, width: `${SR_WIDTH}%` },
     ...nonSrColumns.map((col) => ({
@@ -267,7 +263,7 @@ const transformTripsToPartySections = (
   trips.forEach((trip) => {
     const payment =
       format === "material" ? trip.materialPayment : trip.truckPayment;
-    if (!payment?.party?.id) return; // Skip if no party
+    if (!payment?.party?.id) return;
 
     const partyId = payment.party.id;
     const partyName = payment.party.name;
@@ -373,26 +369,50 @@ const PartySection = ({ name, trips, columns }: TransporterSectionProps) => (
   </View>
 );
 
-// Summary section component
+// ─── Summary Section ────────────────────────────────────────────────────────────
+
 interface SummaryProps {
   totalTrips: number;
+  totalAdvance: number;
   totalBalance: number;
+  options: TripPDFOptions;
 }
 
-const SummarySection = ({ totalTrips, totalBalance }: SummaryProps) => (
-  <View style={styles.summaryRow}>
-    <View style={styles.summarySection}>
-      <View style={styles.summarySectionLeft}>
-        <Text style={styles.summaryText}>Total Trips: {totalTrips}</Text>
-      </View>
-      <View style={styles.summarySectionRight}>
-        <Text style={styles.summaryText}>
-          Total Balance: {fmtAmount(totalBalance)}
-        </Text>
+const SummarySection = ({
+  totalTrips,
+  totalAdvance,
+  totalBalance,
+  options,
+}: SummaryProps) => {
+  const { fields } = options;
+
+  // Default to true (shown) if the flag is not explicitly set to false
+  const showTrips = fields.summaryTotalTrips !== false;
+  const showAdvance = fields.summaryTotalAdvance !== false;
+  const showBalance = fields.summaryTotalBalance !== false;
+
+  const items = [
+    showTrips && { label: "Total Trips", value: String(totalTrips) },
+    showAdvance && { label: "Total Advance", value: fmtAmount(totalAdvance) },
+    showBalance && { label: "Total Balance", value: fmtAmount(totalBalance) },
+  ].filter(Boolean) as { label: string; value: string }[];
+
+  if (items.length === 0) return null;
+
+  return (
+    <View style={styles.summaryRow}>
+      <View style={styles.summarySection}>
+        {items.map((item) => (
+          <View key={item.label} style={styles.summarySectionLeft}>
+            <Text style={styles.summaryText}>
+              {item.label}: {item.value}
+            </Text>
+          </View>
+        ))}
       </View>
     </View>
-  </View>
-);
+  );
+};
 
 // ─── Main PDF Document ───────────────────────────────────────────────────────
 
@@ -404,6 +424,13 @@ export const TripPDF = ({ options, data }: TripPDFProps) => {
     (acc, section) => acc + section.trips.length,
     0,
   );
+
+  const totalAdvance = partyData.reduce(
+    (acc, section) =>
+      acc + section.trips.reduce((a, row) => a + (row.advance || 0), 0),
+    0,
+  );
+
   const totalBalance = partyData.reduce(
     (acc, section) =>
       acc + section.trips.reduce((a, row) => a + (row.balance || 0), 0),
@@ -427,7 +454,12 @@ export const TripPDF = ({ options, data }: TripPDFProps) => {
         ))}
 
         {/* Summary */}
-        <SummarySection totalTrips={totalTrips} totalBalance={totalBalance} />
+        <SummarySection
+          totalTrips={totalTrips}
+          totalAdvance={totalAdvance}
+          totalBalance={totalBalance}
+          options={options}
+        />
 
         {/* Footer */}
         <PDFFooter />

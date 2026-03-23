@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { PdfPreviewDialog } from "@/components/ui/pdf-preview-dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
 import {
   Sheet,
   SheetClose,
@@ -32,6 +34,8 @@ interface PrintOptions {
   commission: boolean;
   other: boolean;
   balance: boolean;
+  summaryTotalAdvance: boolean;
+  summaryTotalBalance: boolean;
 }
 
 export interface TripPDFOptions {
@@ -54,6 +58,11 @@ const PRINT_FIELDS = [
   { id: "balance", label: "Balance" },
 ] as const;
 
+const SUMMARY_FIELDS = [
+  { id: "summaryTotalAdvance", label: "Total Advance" },
+  { id: "summaryTotalBalance", label: "Total Balance" },
+] as const;
+
 const DEFAULT_STATE: PrintOptions = {
   date: true,
   truckNo: true,
@@ -67,6 +76,8 @@ const DEFAULT_STATE: PrintOptions = {
   commission: true,
   other: false,
   balance: true,
+  summaryTotalAdvance: true,
+  summaryTotalBalance: true,
 };
 
 export function TripPrinter() {
@@ -115,7 +126,7 @@ export function TripPrinter() {
           <PrinterIcon />
         </Button>
       </SheetTrigger>
-      <SheetContent>
+      <SheetContent className="flex flex-col">
         <SheetHeader>
           <SheetTitle>Print Trip Details</SheetTitle>
           <SheetDescription>
@@ -123,43 +134,69 @@ export function TripPrinter() {
           </SheetDescription>
         </SheetHeader>
 
-        <div className="space-y-3 my-6">
-          <div className="flex gap-2">
-            <Button
-              variant={format === "material" ? "default" : "outline"}
-              size="sm"
-              className="grow"
-              onClick={() => setFormat("material")}
-            >
-              Material
-            </Button>
-            <Button
-              variant={format === "truck" ? "default" : "outline"}
-              size="sm"
-              className="grow"
-              onClick={() => setFormat("truck")}
-            >
-              Truck
-            </Button>
-          </div>
+        <ScrollArea className="flex-1 -mx-6 px-6">
+          <div className="space-y-3 my-6">
+            {/* Format toggle */}
+            <div className="flex gap-2">
+              <Button
+                variant={format === "material" ? "default" : "outline"}
+                size="sm"
+                className="grow"
+                onClick={() => setFormat("material")}
+              >
+                Material
+              </Button>
+              <Button
+                variant={format === "truck" ? "default" : "outline"}
+                size="sm"
+                className="grow"
+                onClick={() => setFormat("truck")}
+              >
+                Truck
+              </Button>
+            </div>
 
-          <div className="space-y-3">
-            {PRINT_FIELDS.map((field) => (
-              <div key={field.id} className="flex items-center gap-2">
-                <Checkbox
-                  id={field.id}
-                  checked={selectedFields[field.id as keyof PrintOptions]}
-                  onCheckedChange={() =>
-                    handleFieldToggle(field.id as keyof PrintOptions)
-                  }
-                />
-                <Label htmlFor={field.id} className="cursor-pointer">
-                  {field.label}
-                </Label>
-              </div>
-            ))}
+            {/* Column fields */}
+            <div className="space-y-3">
+              {PRINT_FIELDS.map((field) => (
+                <div key={field.id} className="flex items-center gap-2">
+                  <Checkbox
+                    id={field.id}
+                    checked={selectedFields[field.id as keyof PrintOptions]}
+                    onCheckedChange={() =>
+                      handleFieldToggle(field.id as keyof PrintOptions)
+                    }
+                  />
+                  <Label htmlFor={field.id} className="cursor-pointer">
+                    {field.label}
+                  </Label>
+                </div>
+              ))}
+            </div>
+
+            {/* Separator + Summary fields */}
+            <Separator />
+            <div className="space-y-3">
+              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
+                Summary
+              </p>
+              {SUMMARY_FIELDS.map((field) => (
+                <div key={field.id} className="flex items-center gap-2">
+                  <Checkbox
+                    id={field.id}
+                    checked={selectedFields[field.id as keyof PrintOptions]}
+                    onCheckedChange={() =>
+                      handleFieldToggle(field.id as keyof PrintOptions)
+                    }
+                  />
+                  <Label htmlFor={field.id} className="cursor-pointer">
+                    {field.label}
+                  </Label>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
+        </ScrollArea>
 
         <SheetFooter>
           <SheetClose asChild>
