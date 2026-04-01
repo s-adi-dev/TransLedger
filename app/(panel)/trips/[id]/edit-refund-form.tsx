@@ -64,7 +64,7 @@ export function EditRefundForm({
 
   const getInitialForm = () => ({
     refundAmount: refund?.refundAmount || 0,
-    refundDate: refund?.refundDate ? new Date(refund.refundDate) : new Date(),
+    refundDate: refund?.refundDate ? new Date(refund.refundDate) : undefined,
   });
 
   const [form, setForm] = useState(getInitialForm());
@@ -179,11 +179,11 @@ export function EditRefundForm({
 
           <FormField label="Refund Date" htmlFor="refundDate" required>
             <DatePicker
-              value={form.refundDate ? new Date(form.refundDate) : undefined}
+              value={form.refundDate}
               onChange={(date: Date | undefined) =>
                 setForm((prev) => ({
                   ...prev,
-                  refundDate: date || new Date(),
+                  refundDate: date,
                 }))
               }
             />
