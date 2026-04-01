@@ -130,7 +130,7 @@ export const TripsTable = ({ trips, onViewDetails }: TripsTableProps) => {
                     </div>
                   </TableCell>
                   <TableCell className="font-semibold">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 whitespace-nowrap">
                       <Truck className="h-4 w-4 text-muted-foreground" />
                       {trip.truckNo}
                     </div>
