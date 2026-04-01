@@ -18,6 +18,7 @@ interface TripStore {
   filters: TripFilters;
   page: number;
   limit: number;
+  selectedTripId: string | null;
   setFilters: (filters: TripFilters) => void;
   setSearch: (search: string | undefined) => void;
   setTruckNo: (truckNo: string | undefined) => void;
@@ -32,13 +33,15 @@ interface TripStore {
   setLimit: (limit: number) => void;
   clearFilters: () => void;
   resetPagination: () => void;
+  setSelectedTripId: (tripId: string | null) => void;
 }
 
 export const useTripStore = create<TripStore>((set) => ({
   filters: {},
   page: 1,
   limit: 20,
-  setFilters: (filters) => set({ filters, page: 1 }), // Reset to page 1 when filters change
+  selectedTripId: null,
+  setFilters: (filters) => set({ filters, page: 1 }),
   setSearch: (search) =>
     set((state) => ({ filters: { ...state.filters, search }, page: 1 })),
   setTruckNo: (truckNo) =>
@@ -67,7 +70,8 @@ export const useTripStore = create<TripStore>((set) => ({
   setTruckPartyId: (truckPartyId) =>
     set((state) => ({ filters: { ...state.filters, truckPartyId }, page: 1 })),
   setPage: (page) => set({ page }),
-  setLimit: (limit) => set({ limit, page: 1 }), // Reset to page 1 when limit changes
+  setLimit: (limit) => set({ limit, page: 1 }),
   clearFilters: () => set({ filters: {}, page: 1 }),
   resetPagination: () => set({ page: 1 }),
+  setSelectedTripId: (tripId) => set({ selectedTripId: tripId }),
 }));

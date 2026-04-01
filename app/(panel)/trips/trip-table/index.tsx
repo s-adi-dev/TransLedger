@@ -11,6 +11,7 @@ import {
 import { useCollapsibleTable } from "@/hooks/use-collapsible-table";
 import { cn } from "@/lib/utils";
 import { AllTripResponse, generateTripNo } from "@/validators";
+import { useTripStore } from "@/stores/use-trip-store";
 import { formatDate } from "date-fns";
 import {
   ArrowRight,
@@ -58,6 +59,7 @@ const getBiltiStatusColor = (status: string) => {
 export const TripsTable = ({ trips, onViewDetails }: TripsTableProps) => {
   const { toggleItem, isOpen, setContentRef, getExpandableStyle } =
     useCollapsibleTable(trips);
+  const { selectedTripId, setSelectedTripId } = useTripStore();
 
   if (!trips.length) {
     return (
@@ -114,10 +116,21 @@ export const TripsTable = ({ trips, onViewDetails }: TripsTableProps) => {
             return (
               <React.Fragment key={tripId}>
                 <TableRow
-                  className={`cursor-pointer transition-colors duration-200 ${
-                    open ? "bg-muted/30" : ""
-                  }`}
-                  onClick={() => toggleItem(tripId)}
+                  className={cn(
+                    `cursor-pointer transition-all duration-200 hover:bg-muted/50`,
+                    selectedTripId === tripId &&
+                      "bg-lenier-to-r from-primary/15 to-primary/5 border-l-4 border-l-primary shadow-sm",
+                    open &&
+                      selectedTripId === tripId &&
+                      "bg-lenier-to-r from-primary/20 to-primary/10",
+                    open && selectedTripId !== tripId && "bg-muted/30",
+                  )}
+                  onClick={() => {
+                    toggleItem(tripId);
+                    setSelectedTripId(
+                      selectedTripId === tripId ? null : tripId,
+                    );
+                  }}
                 >
                   <TableCell className="font-medium">
                     {generateTripNo(trip.tripNo)}
