@@ -50,130 +50,175 @@ interface TableRowProps {
   index: number;
   isLast: boolean;
   columns: ColumnConfig[];
+  styles: ReturnType<typeof makeStyles>;
 }
 
 interface TransporterSectionProps {
   name: string;
   trips: PartyTripRow[];
   columns: ColumnConfig[];
+  styles: ReturnType<typeof makeStyles>;
 }
 
-// ─── Styles ────────────────────────────────────────────────────────────────────
-const styles = StyleSheet.create({
-  page: {
-    fontFamily: "Roboto",
-    fontSize: 7,
-    paddingTop: 20,
-    paddingBottom: 30,
-    paddingHorizontal: 20,
-    backgroundColor: "#ffffff",
-  },
+// ─── Dynamic Font Sizing ──────────────────────────────────────────────────────
 
-  // ── Section (per party) ────────────────────────────────────────────────────
-  section: {
-    marginBottom: 12,
-  },
+const FONT_LIMITS = {
+  baseFont: { min: 7, max: 9 },
+  cellHeader: { min: 7, max: 12 },
+  cell: { min: 7, max: 12 },
+  tableName: { min: 12, max: 14 },
+  summaryText: { min: 11, max: 12 },
+};
 
-  // ── Table ──────────────────────────────────────────────────────────────────
-  table: {
-    marginTop: 0,
-    marginBottom: 8,
-    overflow: "hidden",
-    borderWidth: 1.5,
-    borderColor: "#a0a0a0",
-  },
-  tableNameRow: {
-    flexDirection: "row",
-    backgroundColor: "#f0f0f0",
-    borderBottomWidth: 1,
-    borderBottomColor: "#a0a0a0",
-    paddingVertical: 8,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  tableHeaderRow: {
-    flexDirection: "row",
-    backgroundColor: "#b4c7e7",
-    borderBottomWidth: 1.5,
-    borderBottomColor: "#a0a0a0",
-  },
-  tableRow: {
-    flexDirection: "row",
-    borderBottomWidth: 0.5,
-    borderBottomColor: "#e8e8e8",
-    backgroundColor: "#ffffff",
-  },
-  tableRowAlt: {
-    flexDirection: "row",
-    borderBottomWidth: 0.5,
-    borderBottomColor: "#e8e8e8",
-    backgroundColor: "#f7f7f7",
-  },
-  tableRowLast: {
-    flexDirection: "row",
-    borderBottomWidth: 0.5,
-    borderBottomColor: "#e8e8e8",
-    backgroundColor: "#ffffff",
-  },
+// Columns range over which font scaling applies.
+// At MIN_COLS → max font size. At MAX_COLS → min font size.
+const MIN_COLS = 1;
+const MAX_COLS = 14;
 
-  // ── Table Cells ────────────────────────────────────────────────────────────
-  tableNameText: {
-    fontSize: 12,
-    fontFamily: "Roboto",
-    fontWeight: "600",
-    color: "#1a1a1a",
-    textAlign: "center",
-  },
-  cellHeader: {
-    fontFamily: "Roboto",
-    fontWeight: "semibold",
-    fontSize: 7,
-    padding: 4.5,
-    textAlign: "center",
-    color: "#1a1a1a",
-  },
-  cell: {
-    fontSize: 7,
-    padding: 4,
-    textAlign: "center",
-    color: "#404040",
-  },
+const getDynamicFontSizes = (columnCount: number) => {
+  // t goes 0 → 1 as column count goes MIN_COLS → MAX_COLS
+  const t = Math.max(
+    0,
+    Math.min(1, (columnCount - MIN_COLS) / (MAX_COLS - MIN_COLS)),
+  );
 
-  // ── Summary row ────────────────────────────────────────────────────────────
-  summaryRow: {
-    flexDirection: "column",
-    marginTop: 8,
-    paddingTop: 10,
-    paddingBottom: 10,
-    paddingHorizontal: 8,
-    borderTopWidth: 1.5,
-    borderTopColor: "#000000",
-    borderBottomWidth: 1.5,
-    borderBottomColor: "#000000",
-    backgroundColor: "#f9f9f9",
-    justifyContent: "center",
-  },
-  summarySection: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 4,
-  },
-  summarySectionLeft: {
-    flexDirection: "column",
-    justifyContent: "center",
-  },
-  summarySectionRight: {
-    flexDirection: "column",
-    justifyContent: "center",
-  },
-  summaryText: {
-    fontSize: 11,
-    fontFamily: "Roboto",
-    fontWeight: "semibold",
-    color: "#1a1a1a",
-  },
-});
+  // Interpolate: fewer columns → closer to max; more columns → closer to min
+  const scale = (min: number, max: number) =>
+    Math.round((min + (max - min) * (1 - t)) * 10) / 10;
+
+  return {
+    baseFont: scale(FONT_LIMITS.baseFont.min, FONT_LIMITS.baseFont.max),
+    cellHeader: scale(FONT_LIMITS.cellHeader.min, FONT_LIMITS.cellHeader.max),
+    cell: scale(FONT_LIMITS.cell.min, FONT_LIMITS.cell.max),
+    tableName: scale(FONT_LIMITS.tableName.min, FONT_LIMITS.tableName.max),
+    summaryText: scale(
+      FONT_LIMITS.summaryText.min,
+      FONT_LIMITS.summaryText.max,
+    ),
+  };
+};
+
+// ─── Styles Factory ────────────────────────────────────────────────────────────
+// Called once per render with computed font sizes.
+// @react-pdf/renderer requires static values at StyleSheet.create time,
+// so we recreate the sheet whenever column count changes.
+
+const makeStyles = (fs: ReturnType<typeof getDynamicFontSizes>) =>
+  StyleSheet.create({
+    page: {
+      fontFamily: "Roboto",
+      fontSize: fs.baseFont,
+      paddingTop: 20,
+      paddingBottom: 30,
+      paddingHorizontal: 20,
+      backgroundColor: "#ffffff",
+    },
+
+    // ── Section (per party) ──────────────────────────────────────────────────
+    section: {
+      marginBottom: 12,
+    },
+
+    // ── Table ────────────────────────────────────────────────────────────────
+    table: {
+      marginTop: 0,
+      marginBottom: 8,
+      overflow: "hidden",
+      borderWidth: 1.5,
+      borderColor: "#a0a0a0",
+    },
+    tableNameRow: {
+      flexDirection: "row",
+      backgroundColor: "#f0f0f0",
+      borderBottomWidth: 1,
+      borderBottomColor: "#a0a0a0",
+      paddingVertical: 8,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    tableHeaderRow: {
+      flexDirection: "row",
+      backgroundColor: "#b4c7e7",
+      borderBottomWidth: 1.5,
+      borderBottomColor: "#a0a0a0",
+    },
+    tableRow: {
+      flexDirection: "row",
+      borderBottomWidth: 0.5,
+      borderBottomColor: "#e8e8e8",
+      backgroundColor: "#ffffff",
+    },
+    tableRowAlt: {
+      flexDirection: "row",
+      borderBottomWidth: 0.5,
+      borderBottomColor: "#e8e8e8",
+      backgroundColor: "#f7f7f7",
+    },
+    tableRowLast: {
+      flexDirection: "row",
+      borderBottomWidth: 0.5,
+      borderBottomColor: "#e8e8e8",
+      backgroundColor: "#ffffff",
+    },
+
+    // ── Table Cells ──────────────────────────────────────────────────────────
+    tableNameText: {
+      fontSize: fs.tableName,
+      fontFamily: "Roboto",
+      fontWeight: "600",
+      color: "#1a1a1a",
+      textAlign: "center",
+    },
+    cellHeader: {
+      fontFamily: "Roboto",
+      fontWeight: "semibold",
+      fontSize: fs.cellHeader,
+      padding: 4.5,
+      textAlign: "center",
+      color: "#1a1a1a",
+    },
+    cell: {
+      fontSize: fs.cell,
+      padding: 4,
+      textAlign: "center",
+      color: "#404040",
+    },
+
+    // ── Summary row ──────────────────────────────────────────────────────────
+    summaryRow: {
+      flexDirection: "column",
+      marginTop: 8,
+      paddingTop: 10,
+      paddingBottom: 10,
+      paddingHorizontal: 8,
+      borderTopWidth: 1.5,
+      borderTopColor: "#000000",
+      borderBottomWidth: 1.5,
+      borderBottomColor: "#000000",
+      backgroundColor: "#f9f9f9",
+      justifyContent: "center",
+    },
+    summarySection: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 4,
+    },
+    summarySectionLeft: {
+      flexDirection: "column",
+      justifyContent: "center",
+    },
+    summarySectionRight: {
+      flexDirection: "column",
+      justifyContent: "center",
+    },
+    summaryText: {
+      fontSize: fs.summaryText,
+      fontFamily: "Roboto",
+      fontWeight: "semibold",
+      color: "#1a1a1a",
+    },
+  });
 
 // ─── Utility: Get visible columns based on options ────────────────────────────
 const getVisibleColumns = (options: TripPDFOptions): ColumnConfig[] => {
@@ -218,7 +263,7 @@ const getVisibleColumns = (options: TripPDFOptions): ColumnConfig[] => {
   }
   if (fields.balance) visible.push(allColumns.balance);
 
-  // ── Dynamic width redistribution ─────────────────────────────────────────
+  // ── Dynamic width redistribution ───────────────────────────────────────────
   const SR_WIDTH = 4;
   const TOTAL_WIDTH = 100;
   const distributableWidth = TOTAL_WIDTH - SR_WIDTH;
@@ -253,7 +298,7 @@ const formatCellValue = (value: string | number | undefined): string => {
   return String(value);
 };
 
-// ─── Utility: Transform trips to party sections ─────────────────────────────────
+// ─── Utility: Transform trips to party sections ────────────────────────────────
 const transformTripsToPartySections = (
   trips: TripBaseType[],
   format: "material" | "truck",
@@ -316,9 +361,15 @@ const transformTripsToPartySections = (
   }));
 };
 
-// ─── Components ──────────────────────────────────────────────────────────────────
+// ─── Components ───────────────────────────────────────────────────────────────
 
-const TableHeader = ({ columns }: { columns: ColumnConfig[] }) => (
+const TableHeader = ({
+  columns,
+  styles,
+}: {
+  columns: ColumnConfig[];
+  styles: ReturnType<typeof makeStyles>;
+}) => (
   <View style={styles.tableHeaderRow} fixed>
     {columns.map((col) => (
       <Text key={col.key} style={[styles.cellHeader, { width: col.width }]}>
@@ -328,7 +379,7 @@ const TableHeader = ({ columns }: { columns: ColumnConfig[] }) => (
   </View>
 );
 
-const TableRow = ({ row, index, isLast, columns }: TableRowProps) => {
+const TableRow = ({ row, index, isLast, columns, styles }: TableRowProps) => {
   const rowStyle = isLast
     ? styles.tableRowLast
     : index % 2 === 0
@@ -346,7 +397,12 @@ const TableRow = ({ row, index, isLast, columns }: TableRowProps) => {
   );
 };
 
-const PartySection = ({ name, trips, columns }: TransporterSectionProps) => (
+const PartySection = ({
+  name,
+  trips,
+  columns,
+  styles,
+}: TransporterSectionProps) => (
   <View style={styles.section}>
     <View style={styles.table}>
       {/* Party Name Row */}
@@ -354,7 +410,7 @@ const PartySection = ({ name, trips, columns }: TransporterSectionProps) => (
         <Text style={styles.tableNameText}>{name}</Text>
       </View>
       {/* Column Headers - Fixed to repeat on each page */}
-      <TableHeader columns={columns} />
+      <TableHeader columns={columns} styles={styles} />
       {/* Data Rows */}
       {trips.map((row, i) => (
         <TableRow
@@ -363,19 +419,21 @@ const PartySection = ({ name, trips, columns }: TransporterSectionProps) => (
           index={i}
           isLast={i === trips.length - 1}
           columns={columns}
+          styles={styles}
         />
       ))}
     </View>
   </View>
 );
 
-// ─── Summary Section ────────────────────────────────────────────────────────────
+// ─── Summary Section ───────────────────────────────────────────────────────────
 
 interface SummaryProps {
   totalTrips: number;
   totalAdvance: number;
   totalBalance: number;
   options: TripPDFOptions;
+  styles: ReturnType<typeof makeStyles>;
 }
 
 const SummarySection = ({
@@ -383,10 +441,10 @@ const SummarySection = ({
   totalAdvance,
   totalBalance,
   options,
+  styles,
 }: SummaryProps) => {
   const { fields } = options;
 
-  // Default to true (shown) if the flag is not explicitly set to false
   const showAdvance = fields.summaryTotalAdvance !== false;
   const showBalance = fields.summaryTotalBalance !== false;
 
@@ -412,10 +470,13 @@ const SummarySection = ({
   );
 };
 
-// ─── Main PDF Document ───────────────────────────────────────────────────────
+// ─── Main PDF Document ────────────────────────────────────────────────────────
 
 export const TripPDF = ({ options, data }: TripPDFProps) => {
   const columns = getVisibleColumns(options);
+  const fontSizes = getDynamicFontSizes(columns.length); // scale by column count
+  const styles = makeStyles(fontSizes); // derive stylesheet
+
   const partyData = transformTripsToPartySections(data, options.format);
 
   const totalTrips = partyData.reduce(
@@ -448,6 +509,7 @@ export const TripPDF = ({ options, data }: TripPDFProps) => {
             name={section.name}
             trips={section.trips}
             columns={columns}
+            styles={styles}
           />
         ))}
 
@@ -457,6 +519,7 @@ export const TripPDF = ({ options, data }: TripPDFProps) => {
           totalAdvance={totalAdvance}
           totalBalance={totalBalance}
           options={options}
+          styles={styles}
         />
 
         {/* Footer */}
