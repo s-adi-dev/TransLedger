@@ -117,12 +117,13 @@ export const TripsTable = ({ trips, onViewDetails }: TripsTableProps) => {
               <React.Fragment key={tripId}>
                 <TableRow
                   className={cn(
-                    `cursor-pointer transition-all duration-200 hover:bg-muted/50`,
-                    selectedTripId === tripId &&
-                      "bg-lenier-to-r from-primary/15 to-primary/5 border-l-4 border-l-primary shadow-sm",
+                    "cursor-pointer transition-all duration-200",
+                    selectedTripId === tripId
+                      ? "bg-zinc-900 text-white border-l-4 border-l-white [&_td]:text-white [&_svg]:text-zinc-400 [&_.text-muted-foreground]:text-zinc-400 shadow-[inset_0_1px_0_rgba(255,255,255,0.05),inset_0_-1px_0_rgba(255,255,255,0.05)] hover:bg-zinc-800"
+                      : "hover:bg-muted/50",
                     open &&
                       selectedTripId === tripId &&
-                      "bg-lenier-to-r from-primary/20 to-primary/10",
+                      "bg-zinc-950 hover:bg-zinc-900",
                     open && selectedTripId !== tripId && "bg-muted/30",
                   )}
                   onClick={() => {
