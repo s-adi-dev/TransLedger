@@ -21,6 +21,7 @@ import { ChangeEvent, useState } from "react";
 import { toast } from "sonner";
 import { BiltiSection } from "./bilti-section";
 import { PartyPaymentSection } from "./payment-section";
+import { formatTruckNumber } from "@/lib/str";
 
 const getInitialFormState = (): CreateTripType => ({
   date: new Date(),
@@ -75,6 +76,14 @@ export default function TripForm() {
     locationData?.locations?.map((item) => item.location) || [];
 
   const companies = companiesData?.companies || [];
+
+  const handleTruckNoChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const formattedTruckNo = formatTruckNumber(e.target.value);
+    setForm((prev) => ({
+      ...prev,
+      truckNo: formattedTruckNo,
+    }));
+  };
 
   const handleInputChange = (
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -155,9 +164,9 @@ export default function TripForm() {
                 <FormField label="Truck Number" htmlFor="truckNo" required>
                   <Input
                     id="truckNo"
-                    placeholder="e.g., MH01AB1234"
+                    placeholder="e.g., MH01AB 1234"
                     value={form.truckNo}
-                    onChange={handleInputChange}
+                    onChange={handleTruckNoChange}
                     required
                   />
                 </FormField>
