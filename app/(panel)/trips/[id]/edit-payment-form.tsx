@@ -19,7 +19,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { capitalizeWord } from "@/lib/str";
 import { formatZodErrors } from "@/lib/zod";
 import { useUpdatePayment } from "@/query";
@@ -138,202 +137,218 @@ export function EditPaymentForm({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] px-2">
-        <DialogHeader>
+      <DialogContent className="!max-w-5xl w-full max-h-[90vh] flex flex-col gap-0 p-0 overflow-hidden">
+        {/* Header */}
+        <DialogHeader className="px-6 pt-6 pb-4 shrink-0">
           <DialogTitle>Edit {capitalizeWord(type)} Payment</DialogTitle>
           <DialogDescription>
             Update {type} payment details for this trip
           </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="max-h-[64vh] px-4">
-          <div className="space-y-4 my-4">
+        {/* Body — native scroll, works correctly inside flex col with min-h-0 */}
+        <div className="flex-1 min-h-0 overflow-y-auto px-6 pb-2">
+          <div className="py-3 space-y-4">
             {/* Party info (read-only) */}
             {payment.party && (
-              <div className="bg-muted/50 rounded-lg p-3">
-                <p className="text-sm text-muted-foreground">Party</p>
-                <p className="font-medium">{payment.party.name}</p>
+              <div className="bg-muted/50 rounded-lg px-3 py-2 flex items-center gap-2">
+                <p className="text-xs text-muted-foreground">Party:</p>
+                <p className="font-medium text-sm">{payment.party.name}</p>
               </div>
             )}
 
-            {/* Freight & Charges */}
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-              Freight & Charges
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField label="Freight Amount" htmlFor="freightAmount">
-                <Input
-                  id="freightAmount"
-                  type="number"
-                  placeholder="0"
-                  value={form.freightAmount || ""}
-                  onChange={handleInputChange}
-                />
-              </FormField>
+            {/* Row 1 — Freight, Loading, Unloading, Damage (4 across) */}
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                Freight & Charges
+              </p>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <FormField label="Freight Amount" htmlFor="freightAmount">
+                  <Input
+                    id="freightAmount"
+                    type="number"
+                    placeholder="0"
+                    value={form.freightAmount || ""}
+                    onChange={handleInputChange}
+                    className="h-8 text-sm"
+                  />
+                </FormField>
+                <FormField label="Loading" htmlFor="loadingCharge">
+                  <Input
+                    id="loadingCharge"
+                    type="number"
+                    placeholder="0"
+                    value={form.loadingCharge || ""}
+                    onChange={handleInputChange}
+                    className="h-8 text-sm"
+                  />
+                </FormField>
+                <FormField label="Unloading" htmlFor="unloadingCharge">
+                  <Input
+                    id="unloadingCharge"
+                    type="number"
+                    placeholder="0"
+                    value={form.unloadingCharge || ""}
+                    onChange={handleInputChange}
+                    className="h-8 text-sm"
+                  />
+                </FormField>
+                <FormField label="Damage" htmlFor="damageCharge">
+                  <Input
+                    id="damageCharge"
+                    type="number"
+                    placeholder="0"
+                    value={form.damageCharge || ""}
+                    onChange={handleInputChange}
+                    className="h-8 text-sm"
+                  />
+                </FormField>
+              </div>
+            </div>
 
-              <FormField label="Loading Charge" htmlFor="loadingCharge">
-                <Input
-                  id="loadingCharge"
-                  type="number"
-                  placeholder="0"
-                  value={form.loadingCharge || ""}
-                  onChange={handleInputChange}
-                />
-              </FormField>
+            {/* Row 2 — Extra charges + type, TDS, Commission (4 across) */}
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                Extra & Deductions
+              </p>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <FormField label="Extra Charges" htmlFor="extraChargesAmount">
+                  <Input
+                    id="extraChargesAmount"
+                    type="number"
+                    placeholder="0"
+                    value={form.extraChargesAmount || ""}
+                    onChange={handleInputChange}
+                    className="h-8 text-sm"
+                  />
+                </FormField>
+                <FormField label="Extra Type" htmlFor="extraChargesType">
+                  <Select
+                    value={form.extraChargesType || ""}
+                    onValueChange={(value) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        extraChargesType: (value ||
+                          null) as ExtraChargeType | null,
+                      }))
+                    }
+                  >
+                    <SelectTrigger
+                      id="extraChargesType"
+                      className="h-8 text-sm"
+                    >
+                      <SelectValue placeholder="Select type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="discount">Discount</SelectItem>
+                      <SelectItem value="late_delivery">
+                        Late Delivery
+                      </SelectItem>
+                      <SelectItem value="detention">Detention</SelectItem>
+                      <SelectItem value="extra_loading">
+                        Extra Loading
+                      </SelectItem>
+                      <SelectItem value="penalty">Penalty</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormField>
+                <FormField label="TDS Amount" htmlFor="tdsAmount">
+                  <Input
+                    id="tdsAmount"
+                    type="number"
+                    placeholder="0"
+                    value={form.tdsAmount || ""}
+                    onChange={handleInputChange}
+                    className="h-8 text-sm"
+                  />
+                </FormField>
+                <FormField label="Commission" htmlFor="commissionAmount">
+                  <Input
+                    id="commissionAmount"
+                    type="number"
+                    placeholder="0"
+                    value={form.commissionAmount || ""}
+                    onChange={handleInputChange}
+                    className="h-8 text-sm"
+                  />
+                </FormField>
+              </div>
+            </div>
 
-              <FormField label="Unloading Charge" htmlFor="unloadingCharge">
-                <Input
-                  id="unloadingCharge"
-                  type="number"
-                  placeholder="0"
-                  value={form.unloadingCharge || ""}
-                  onChange={handleInputChange}
-                />
-              </FormField>
-
-              <FormField label="Damage Charge" htmlFor="damageCharge">
-                <Input
-                  id="damageCharge"
-                  type="number"
-                  placeholder="0"
-                  value={form.damageCharge || ""}
-                  onChange={handleInputChange}
-                />
-              </FormField>
-
-              <FormField label="Extra Charges" htmlFor="extraChargesAmount">
-                <Input
-                  id="extraChargesAmount"
-                  type="number"
-                  placeholder="0"
-                  value={form.extraChargesAmount || ""}
-                  onChange={handleInputChange}
-                />
-              </FormField>
-
-              <FormField label="Extra Charge Type" htmlFor="extraChargesType">
-                <Select
-                  value={form.extraChargesType || ""}
-                  onValueChange={(value) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      extraChargesType: (value ||
-                        null) as ExtraChargeType | null,
-                    }))
-                  }
+            {/* Row 3 — Payment Details (4 across) */}
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                Payment Details
+              </p>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <FormField label="Advance Amount" htmlFor="advanceAmount">
+                  <Input
+                    id="advanceAmount"
+                    type="number"
+                    placeholder="0"
+                    value={form.advanceAmount || ""}
+                    onChange={handleInputChange}
+                    className="h-8 text-sm"
+                  />
+                </FormField>
+                <FormField label="Advance Date" htmlFor="advanceDate">
+                  <DatePicker
+                    value={
+                      form.advanceDate ? new Date(form.advanceDate) : undefined
+                    }
+                    onChange={(date: Date | undefined) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        advanceDate: date || null,
+                      }))
+                    }
+                  />
+                </FormField>
+                <FormField
+                  label="Final Payment Date"
+                  htmlFor="finalPaymentDate"
+                  className="col-span-2"
                 >
-                  <SelectTrigger id="extraChargesType">
-                    <SelectValue placeholder="Select type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="discount">Discount</SelectItem>
-                    <SelectItem value="late_delivery">Late Delivery</SelectItem>
-                    <SelectItem value="detention">Detention</SelectItem>
-                    <SelectItem value="extra_loading">Extra Loading</SelectItem>
-                    <SelectItem value="penalty">Penalty</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </FormField>
-            </div>
-
-            {/* Deductions */}
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide pt-2">
-              Deductions
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField label="TDS Amount" htmlFor="tdsAmount">
-                <Input
-                  id="tdsAmount"
-                  type="number"
-                  placeholder="0"
-                  value={form.tdsAmount || ""}
-                  onChange={handleInputChange}
-                />
-              </FormField>
-
-              <FormField label="Commission" htmlFor="commissionAmount">
-                <Input
-                  id="commissionAmount"
-                  type="number"
-                  placeholder="0"
-                  value={form.commissionAmount || ""}
-                  onChange={handleInputChange}
-                />
-              </FormField>
-            </div>
-
-            {/* Payment Details */}
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide pt-2">
-              Payment Details
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField label="Advance Amount" htmlFor="advanceAmount">
-                <Input
-                  id="advanceAmount"
-                  type="number"
-                  placeholder="0"
-                  value={form.advanceAmount || ""}
-                  onChange={handleInputChange}
-                />
-              </FormField>
-
-              <FormField label="Advance Date" htmlFor="advanceDate">
-                <DatePicker
-                  value={
-                    form.advanceDate ? new Date(form.advanceDate) : undefined
-                  }
-                  onChange={(date: Date | undefined) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      advanceDate: date || null,
-                    }))
-                  }
-                />
-              </FormField>
-
-              <FormField
-                label="Final Payment Date"
-                htmlFor="finalPaymentDate"
-                className="md:col-span-2"
-              >
-                <DatePicker
-                  value={
-                    form.finalPaymentDate
-                      ? new Date(form.finalPaymentDate)
-                      : undefined
-                  }
-                  onChange={(date: Date | undefined) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      finalPaymentDate: date || null,
-                    }))
-                  }
-                />
-              </FormField>
+                  <DatePicker
+                    value={
+                      form.finalPaymentDate
+                        ? new Date(form.finalPaymentDate)
+                        : undefined
+                    }
+                    onChange={(date: Date | undefined) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        finalPaymentDate: date || null,
+                      }))
+                    }
+                  />
+                </FormField>
+              </div>
             </div>
           </div>
+        </div>
 
-          <DialogFooter className="max-sm:gap-3">
-            <div className="w-44 flex mr-auto items-center px-3 rounded-md border bg-muted text-sm font-medium text-foreground select-none">
-              ₹ {balanceAmount.toLocaleString()}
-            </div>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="button"
-              onClick={validateAndSubmit}
-              disabled={updatePayment.isPending}
-            >
-              {updatePayment.isPending ? "Saving..." : "Save Changes"}
-            </Button>
-          </DialogFooter>
-        </ScrollArea>
+        {/* Footer — always visible */}
+        <DialogFooter className="px-6 py-4 border-t shrink-0 max-sm:gap-3">
+          <div className="w-44 flex mr-auto items-center px-3 h-9 rounded-md border bg-muted text-sm font-medium text-foreground select-none">
+            ₹ {balanceAmount.toLocaleString()}
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            onClick={validateAndSubmit}
+            disabled={updatePayment.isPending}
+          >
+            {updatePayment.isPending ? "Saving..." : "Save Changes"}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
