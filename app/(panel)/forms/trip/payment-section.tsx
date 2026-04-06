@@ -296,8 +296,10 @@ export function PartyPaymentSection({
           htmlFor={`${partyType}-final-date`}
         >
           <div className="flex gap-2">
-            <Input className="w-44" value={balanceAmount} disabled />
-
+            <div className="w-44 flex items-center px-3 rounded-md border bg-muted text-sm font-medium text-foreground select-none">
+              ₹ {balanceAmount.toLocaleString()}
+            </div>
+            x
             <DatePicker
               className="w-full"
               id={`${partyType}-final-date`}

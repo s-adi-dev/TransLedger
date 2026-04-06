@@ -84,6 +84,15 @@ export function EditPaymentForm({
 
   const [form, setForm] = useState(getInitialForm());
 
+  const totalCharges =
+    (form.loadingCharge || 0) +
+    (form.unloadingCharge || 0) +
+    (form.damageCharge || 0) +
+    (form.extraChargesAmount || 0);
+  const totalDeductions = (form.tdsAmount || 0) + (form.commissionAmount || 0);
+  const netAmount = (form.freightAmount || 0) - (form.advanceAmount || 0);
+  const balanceAmount = netAmount - totalCharges - totalDeductions;
+
   // Reset form when dialog opens
   const [prevOpen, setPrevOpen] = useState(false);
   if (open !== prevOpen) {
@@ -208,7 +217,8 @@ export function EditPaymentForm({
                   onValueChange={(value) =>
                     setForm((prev) => ({
                       ...prev,
-                      extraChargesType: (value || null) as ExtraChargeType | null,
+                      extraChargesType: (value ||
+                        null) as ExtraChargeType | null,
                     }))
                   }
                 >
@@ -305,6 +315,9 @@ export function EditPaymentForm({
           </div>
 
           <DialogFooter className="max-sm:gap-3">
+            <div className="w-44 flex mr-auto items-center px-3 rounded-md border bg-muted text-sm font-medium text-foreground select-none">
+              ₹ {balanceAmount.toLocaleString()}
+            </div>
             <Button
               type="button"
               variant="outline"
