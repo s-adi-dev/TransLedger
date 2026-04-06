@@ -113,7 +113,7 @@ export function PartyPaymentSection({
             {title}
             {required && <span className="text-destructive">*</span>}
           </span>
-          <span className="text-sm font-normal text-muted-foreground flex items-center gap-2">
+          <span className="text-base font-medium text-foreground flex items-center gap-2">
             <span>Date: {formatDate(metaData.date, "MMMM do, yyyy")}</span>
             <span>|</span>
             <span>Truck No: {metaData.truckNo || "Not Filled"}</span>
